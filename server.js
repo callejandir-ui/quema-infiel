@@ -9,6 +9,7 @@ const fs = require('fs'); // <-- Módulo para manejar archivos
 // NOTA: Estas variables ahora se leerán desde las variables de entorno de Render
 // para mayor seguridad.
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8549907358:AAGF_RFJ45DQc0KwyQZB4aHKFyNVtY_Mi-o';
+// Aseguramos que el chat_id sea un número, no un string
 const TELEGRAM_GROUP_CHAT_ID = Number(process.env.TELEGRAM_GROUP_CHAT_ID);
 const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
@@ -60,12 +61,13 @@ app.use(express.static(__dirname));
 async function sendTelegramAlert(message) {
     const url = `https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/sendMessage`;
     try {
+        // <-- PRUEBA FINAL: Quitamos el HTML y lo enviamos como texto plano
         await axios.post(url, {
             chat_id: TELEGRAM_GROUP_CHAT_ID,
             text: message,
-            parse_mode: 'HTML'
+            // parse_mode: 'HTML'  <-- LO COMENTAMOS PARA LA PRUEBA
         });
-        console.log("Alerta enviada al grupo de Telegram.");
+        console.log("Alerta enviada al grupo de Telegram (MODO PLANO).");
     } catch (error) {
         console.error('Error enviando alerta a Telegram:', error.response ? error.response.data : error.message);
     }
@@ -140,7 +142,7 @@ app.post('/api/registrar-pago-recarga', async (req, res) => {
     if (!user) {
         return res.status(404).json({ ok: false, message: 'Usuario asociado a la recarga no encontrado.' });
     }
-    const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_${recargaId}`;
+    const mensaje = `💰 NUEVA SOLICITUD DE RECARGA 💰\n\nUsuario: ${user.username}\nCréditos a añadir: ${recarga.creditos}\nMonto pagado: S/ ${recarga.monto}\nID de la Recarga: ${recargaId}\n\n¿APROBAR RECARGA? /approve_recarga_${recargaId}\n\n¿RECHAZAR? /reject_recarga_${recargaId}`;
     await sendTelegramAlert(mensaje);
     console.log(`Notificación de recarga \${recargaId} enviada a Telegram.`);
     res.json({ ok: true, message: 'Pago de recarga registrado. El administrador ha sido notificado.' });
@@ -177,7 +179,7 @@ app.post('/api/registrar-pago-yape', async (req, res) => {
     const paymentId = 'pay_' + Date.now() + '_' + postId;
     pendingPayments[paymentId] = { postId, monto };
     saveDatabase(); // <-- GUARDAR CAMBIO
-    const mensaje = `🔥 <b>NUEVO PAGO YAPE RECIBIDO</b> 🔥\n\n<b>Nombre del Infiel:</b> <i>${post.nombre}</i>\n<b>Monto:</b> S/ ${monto}\n<b>ID de la Solicitud:</b> <code>${postId}</code>\n\n<b>¿APROBAR?</b> /approve_${paymentId}\n\n<b>¿RECHAZAR?</b> /reject_${paymentId}`;
+    const mensaje = `🔥 NUEVO PAGO YAPE RECIBIDO 🔥\n\nNombre del Infiel: ${post.nombre}\nMonto: S/ ${monto}\nID de la Solicitud: ${postId}\n\n¿APROBAR? /approve_${paymentId}\n\n¿RECHAZAR? /reject_${paymentId}`;
     await sendTelegramAlert(mensaje);
     res.json({ ok: true, message: 'Pago registrado. El administrador ha sido notificado.' });
 });
@@ -200,7 +202,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits -= COSTO_QUemar;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log(`✅ Post \${post.id} PUBLICADO.`);
-                await sendTelegramAlert(`✅ Pago <b>\${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`);
+                await sendTelegramAlert(`✅ Pago \${paymentId} APROBADO. Post de \${post.nombre} publicado.`);
             }
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
@@ -213,7 +215,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             post.estado = 'RECHAZADO';
             saveDatabase(); // <-- GUARDAR CAMBIO
             console.log(`❌ Post \${post.id} RECHAZADO.`);
-            await sendTelegramAlert(`❌ Pago <b>\${paymentId}</b> RECHAZADO.`);
+            await sendTelegramAlert(`❌ Pago \${paymentId} RECHAZADO.`);
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
@@ -232,7 +234,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits += recarga.creditos;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log(`✅ Recarga ${recargaId} APROBADA. Se añadieron ${recarga.creditos} créditos al usuario \${user.username}.`);
-                await sendTelegramAlert(`✅ Recarga <b>\${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene ${user.credits} créditos.`);
+                await sendTelegramAlert(`✅ Recarga \${recargaId} APROBADA. El usuario ${user.username} ahora tiene ${user.credits} créditos.`);
             } else {
                 console.log(`❌ Error: Usuario \${recarga.userId} no encontrado para la recarga \${recargaId}.`);
             }
@@ -251,7 +253,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             delete pendingRecargas[recargaId];
             saveDatabase(); // <-- GUARDAR CAMBIO
             console.log(`❌ Recarga \${recargaId} RECHAZADA.`);
-            await sendTelegramAlert(`❌ Recarga <b>\${recargaId}</b> RECHAZADA.`);
+            await sendTelegramAlert(`❌ Recarga \${recargaId} RECHAZADA.`);
         } else {
             console.log(`❌ Error: Recarga con ID \${recargaId} no encontrada para rechazar.`);
         }
