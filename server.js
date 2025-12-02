@@ -16,7 +16,7 @@ const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
 // --- FIN DE LA CONFIGURACIÓN ---
 
 // --- BASE DE DATOS CON PERSISTENCIA EN ARCHIVO JSON ---
-const DB_FILE = 'database.json';
+const DB_FILE = '/var/data/database.json';
 
 // Función para cargar la base de datos desde el archivo
 function loadDatabase() {
