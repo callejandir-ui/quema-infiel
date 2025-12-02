@@ -159,16 +159,25 @@ app.post('/api/solicitar-quemada', async (req, res) => {
     if (!user) {
         return res.status(404).json({ ok: false, message: 'Usuario no encontrado.' });
     }
+
+    // <-- LÓGICA CAMBIADA: Ahora solo verifica créditos, no los descuenta aquí
     if (user.credits < COSTO_QUemar) {
-        return res.status(400).json({ ok: false, message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes ${user.credits}.` });
+        return res.status(400).json({ ok: false, message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} créditos.` });
     }
+
     const postId = 'post_' + db.nextPostId++;
     posts[postId] = { id: postId, userId, nombre, redes, edad, origen, evidencias, fotoBase64, fechaCreacion: new Date().toISOString(), estado: 'PENDIENTE_VALIDACION' };
     saveDatabase(); // <-- GUARDAR CAMBIO
     console.log("Solicitud de quemada para '" + nombre + "' recibida (Post ID: " + postId + ")."); // <-- CORREGIDO
-    res.json({ ok: true, message: 'Solicitud recibida. Ahora realiza el pago y espera la validación.', postId });
+
+    // <-- CAMBIO CLAVE: Enviamos una alerta DIRECTA al admin, sin esperar un pago de Yape.
+    const mensaje = `🔥 <b>NUEVA SOLICITUD DE QUEMADA</b> 🔥\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Nombre del Infiel:</b> <i>${nombre}</i>\n\n<b>¿APROBAR PUBLICACIÓN?</b> /approve_directo_${postId}\n\n<b>¿RECHAZAR?</b> /reject_directo_${postId}`;
+    await sendTelegramAlert(mensaje);
+
+    res.json({ ok: true, message: 'Solicitud recibida. Espera la validación del administrador.', postId });
 });
 
+// Esta ruta ahora es obsoleta para el flujo principal, pero la dejamos por si acaso
 app.post('/api/registrar-pago-yape', async (req, res) => {
     const { postId, monto } = req.body;
     const post = posts[postId];
@@ -178,7 +187,7 @@ app.post('/api/registrar-pago-yape', async (req, res) => {
     const paymentId = 'pay_' + Date.now() + '_' + postId;
     pendingPayments[paymentId] = { postId, monto };
     saveDatabase(); // <-- GUARDAR CAMBIO
-    const mensaje = `🔥 <b>NUEVO PAGO YAPE RECIBIDO</b> 🔥\n\n<b>Nombre del Infiel:</b> <i>${post.nombre}</i>\n<b>Monto:</b> S/ ${monto}\n<b>ID de la Solicitud:</b> <code>${postId}</code>\n\n<b>¿APROBAR?</b> /approve_${paymentId}\n\n<b>¿RECHAZAR?</b> /reject_${paymentId}`;
+    const mensaje = `🔥 <b>NUEVO PAGO YAPE RECIBIDO</b> 🔥\n\n<b>Nombre del Infiel:</b> <i>${post.nombre}</i>\n<b>Monto:</b> S/ ${monto}\n<b>ID de la Solicitud:</b> <code>${postId}</code>\n\n<b>¿APROBAR?</b> /approve_${paymentId}\n\n<b>¿RECHAZAR?</b> /reject_\${paymentId}`;
     await sendTelegramAlert(mensaje);
     res.json({ ok: true, message: 'Pago registrado. El administrador ha sido notificado.' });
 });
@@ -188,8 +197,8 @@ app.post('/api/telegram-webhook', async (req, res) => {
     if (!message || !message.text || message.chat.id != TELEGRAM_GROUP_CHAT_ID) return res.sendStatus(200);
     const text = message.text;
 
-    // --- Lógica para aprobar/rechazar posts ---
-    if (text.startsWith('/approve_') && !text.includes('recarga')) {
+    // --- Lógica para aprobar/rechazar posts (FLUJO ANTIGUO CON PAGO YAPE) ---
+    if (text.startsWith('/approve_') && !text.includes('recarga') && !text.includes('directo')) {
         const paymentId = text.split('_')[1];
         const payment = pendingPayments[paymentId];
         if (payment) {
@@ -201,12 +210,12 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits -= COSTO_QUemar;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log("✅ Post " + post.id + " PUBLICADO."); // <-- CORREGIDO
-                await sendTelegramAlert(`✅ Pago <b>${paymentId}</b> APROBADO. Post de <i>${post.nombre}</i> publicado.`);
+                await sendTelegramAlert(`✅ Pago <b>\${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`);
             }
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
-    } else if (text.startsWith('/reject_') && !text.includes('recarga')) {
+    } else if (text.startsWith('/reject_') && !text.includes('recarga') && !text.includes('directo')) {
         const paymentId = text.split('_')[1];
         if (pendingPayments[paymentId]) {
             const payment = pendingPayments[paymentId];
@@ -219,12 +228,10 @@ app.post('/api/telegram-webhook', async (req, res) => {
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
     }
-    // --- Lógica para aprobar/rechazar recargas (VERSIÓN 100% CORREGIDA) ---
+    // --- Lógica para aprobar/rechazar recargas ---
     else if (text.startsWith('/approve_recarga_')) {
         let recargaId = text.replace('/approve_recarga_', '');
-        // <-- ¡LÍNEA MÁGICA! Esto limpia el comando si Telegram le añade @...
         recargaId = recargaId.split('@')[0]; 
-
         console.log(">>> Comando de aprobación recibido. Intentando aprobar recarga con ID: " + recargaId); // <-- CORREGIDO
         const recarga = pendingRecargas[recargaId];
         if (recarga) {
@@ -233,7 +240,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits += recarga.creditos;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log("✅ Recarga " + recargaId + " APROBADA. Se añadieron " + recarga.creditos + " créditos al usuario " + user.username + "."); // <-- CORREGIDO
-                await sendTelegramAlert(`✅ Recarga <b>\${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene ${user.credits} créditos.`);
+                await sendTelegramAlert(`✅ Recarga <b>${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene \${user.credits} créditos.`);
             } else {
                 console.log("❌ Error: Usuario " + recarga.userId + " no encontrado para la recarga " + recargaId + "."); // <-- CORREGIDO
             }
@@ -244,9 +251,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
         }
     } else if (text.startsWith('/reject_recarga_')) {
         let recargaId = text.replace('/reject_recarga_', '');
-        // <-- ¡LÍNEA MÁGICA! Esto limpia el comando si Telegram le añade @...
         recargaId = recargaId.split('@')[0];
-
         console.log(">>> Comando de rechazo recibido. Intentando rechazar recarga con ID: " + recargaId); // <-- CORREGIDO
         if (pendingRecargas[recargaId]) {
             delete pendingRecargas[recargaId];
@@ -255,6 +260,32 @@ app.post('/api/telegram-webhook', async (req, res) => {
             await sendTelegramAlert(`❌ Recarga <b>\${recargaId}</b> RECHAZADA.`);
         } else {
             console.log("❌ Error: Recarga con ID " + recargaId + " no encontrada para rechazar."); // <-- CORREGIDO
+        }
+    }
+    // --- NUEVA LÓGICA PARA APROBAR/RECHAZAR DIRECTAMENTE (sin pago Yape) ---
+    else if (text.startsWith('/approve_directo_')) {
+        const postId = text.split('_')[2]; // Extrae el ID del post
+        const post = posts[postId];
+        if (post && post.estado === 'PENDIENTE_VALIDACION') {
+            const user = findUserById(post.userId);
+            if (user) {
+                // <-- ¡AQUÍ ES DONDE SE DESCUENTAN LOS CRÉDITOS!
+                user.credits -= COSTO_QUemar;
+                post.estado = 'PUBLICADO';
+                post.fechaPago = new Date().toISOString();
+                saveDatabase();
+                console.log("✅ Post " + post.id + " PUBLICADO DIRECTAMENTE. Créditos descontados.");
+                await sendTelegramAlert(`✅ Solicitud <b>${postId}</b> APROBADA. Post de <i>${post.nombre}</i> publicado y créditos descontados.`);
+            }
+        }
+    } else if (text.startsWith('/reject_directo_')) {
+        const postId = text.split('_')[2]; // Extrae el ID del post
+        const post = posts[postId];
+        if (post && post.estado === 'PENDIENTE_VALIDACION') {
+            post.estado = 'RECHAZADO';
+            saveDatabase();
+            console.log("❌ Post " + post.id + " RECHAZADO.");
+            await sendTelegramAlert(`❌ Solicitud <b>\${postId}</b> RECHAZADA.`);
         }
     }
 
