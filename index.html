@@ -709,10 +709,17 @@
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.message);
 
+                    // <-- ¡LÍNEAS AÑADIDAS PARA ACTUALIZAR CRÉDITOS!
+                    if (data.userCredits !== undefined) {
+                        currentUser.credits = data.userCredits;
+                        updateUserUI();
+                        localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
+                    }
+
                     // Éxito
                     alert('¡El infiel ha sido publicado exitosamente en el muro!');
                     modalQuemar.style.display = 'none';
-                    location.reload(); // Recargamos para ver el nuevo post en el muro
+                    location.reload(); // El reload ya lo actualiza, pero esto lo hace a prueba de fallos.
 
                 } catch (err) {
                     console.error("Error en publicación directa:", err);
@@ -819,8 +826,13 @@
                         const card = document.createElement("div");
                         card.className = "card";
                         card.innerHTML = '<h3>' + post.nombre + '</h3><p>Haz clic para ver los detalles...</p>';
+                        
+                        // <-- ¡FUNCIÓN MODIFICADA PARA ACTUALIZAR CRÉDITOS AL INSTANTE! -->
                         card.addEventListener('click', () => requireLogin(async () => {
                             try {
+                                estadoPago.style.display = 'block'; // <-- Mostramos un "cargando" para mejor UX
+                                estadoPago.innerHTML = '<p>👁️‍🗨️ Revelando el chisme...</p>';
+
                                 const res = await fetch('/api/posts/detalles', {
                                     method: 'POST',
                                     headers: {
@@ -834,9 +846,17 @@
                                 const data = await res.json();
                                 if (!res.ok) throw new Error(data.message);
                                 const fullPost = data.post;
-                                detalleNombre.textContent = '👹 Detalles de ' + fullPost.nombre + ' 👹';
 
-                                // <-- ¡LÍNEA CORREGIDA! Se usa concatenación simple para evitar errores.
+                                // <-- ¡LÍNEAS AÑADIDAS PARA ACTUALIZAR CRÉDITOS AL INSTANTE!
+                                if (data.userCredits !== undefined) {
+                                    currentUser.credits = data.userCredits;
+                                    updateUserUI(); // <-- ¡ESTA ES LA LÍNEA CLAVE! Refresca el contador.
+                                    localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
+                                }
+                                
+                                estadoPago.style.display = 'none'; // <-- Ocultamos el "cargando"
+
+                                detalleNombre.textContent = '👹 Detalles de ' + fullPost.nombre + ' 👹';
                                 detalleContenido.innerHTML =
                                     '<p><strong>Redes:</strong> ' + fullPost.redes + '</p>' +
                                     '<p><strong>Edad:</strong> ' + fullPost.edad + '</p>' +
@@ -846,9 +866,11 @@
                                     '<img src="' + fullPost.fotoBase64 + '" alt="Evidencia de ' + fullPost.nombre + '">';
 
                                 modalDetalle.style.display = 'flex';
-                                updateUserUI();
+
                             } catch (err) {
-                                alert(err.message);
+                                console.error("Error al ver detalles:", err);
+                                estadoPago.textContent = err.message; // <-- Mostramos el error en el mismo lugar
+                                setTimeout(() => { estadoPago.style.display = 'none'; }, 3000); // Lo ocultamos después de 3s
                             }
                         }));
                         listaRegistros.appendChild(card);
