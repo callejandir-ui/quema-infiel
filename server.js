@@ -226,7 +226,7 @@ app.post('/api/solicitar-quemada', async (req, res) => {
     if (!userId || !nombre) {
         return res.status(400).json({
             ok: false,
-            message: 'Faltan datos del usuario o del infiel.'
+            message: 'Faltas datos del usuario o del infiel.'
         });
     }
     const user = findUserById(userId);
@@ -239,7 +239,7 @@ app.post('/api/solicitar-quemada', async (req, res) => {
     if (user.credits < COSTO_QUemar) {
         return res.status(400).json({
             ok: false,
-            message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes ${user.credits}.` // <-- LÍNEA CORREGIDA
+            message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes ${user.credits}.` // <-- LÍNEA CORREGIDA (1 de 3)
         });
     }
     const postId = 'post_' + db.nextPostId++;
@@ -323,7 +323,11 @@ app.post('/api/publicar-directo', async (req, res) => {
     const mensaje = `✅ <b>NUEVO POST PUBLICADO DIRECTAMENTE</b> ✅\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Nombre del Infiel:</b> <i>${nombre}</i>\n<b>ID del Post:</b> <code>${postId}</code>\n\nCréditos descontados.`;
     await sendTelegramAlert(mensaje);
 
-    res.json({ ok: true, message: 'Post publicado exitosamente.' });
+    res.json({ 
+        ok: true, 
+        message: 'Post publicado exitosamente.',
+        userCredits: user.credits // <-- ¡LÍNEA AÑADIDA!
+    });
 });
 // <-- ¡FIN DE LA ADICIÓN! -->
 
@@ -376,7 +380,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits += recarga.creditos;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log("✅ Recarga " + recargaId + " APROBADA. Se añadieron " + recarga.creditos + " créditos al usuario " + user.username + "."); // <-- CORREGIDO
-                await sendTelegramAlert(`✅ Recarga <b>${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene \${user.credits} créditos.`); // <-- LÍNEA CORREGIDA
+                await sendTelegramAlert(`✅ Recarga <b>${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene \${user.credits} créditos.`); // <-- LÍNEA CORREGIDA (2 de 3)
             } else {
                 console.log("❌ Error: Usuario " + recarga.userId + " no encontrado para la recarga " + recargaId + "."); // <-- CORREGIDO
             }
@@ -409,7 +413,7 @@ app.post('/api/posts/detalles', async (req, res) => {
     if (!postId || !userId) {
         return res.status(400).json({
             ok: false,
-            message: 'Faltan datos.'
+            message: 'Faltas datos.'
         });
     }
     const user = findUserById(userId);
@@ -422,7 +426,7 @@ app.post('/api/posts/detalles', async (req, res) => {
     if (user.credits < COSTO_VER_CHISME) {
         return res.status(400).json({
             ok: false,
-            message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.` // <-- LÍNEA CORREGIDA
+            message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.` // <-- LÍNEA CORREGIDA (3 de 3)
         });
     }
     const post = posts[postId];
@@ -435,9 +439,10 @@ app.post('/api/posts/detalles', async (req, res) => {
     user.credits -= COSTO_VER_CHISME;
     saveDatabase(); // <-- GUARDAR CAMBIO
     console.log("Usuario " + user.username + " gastó " + COSTO_VER_CHISME + " créditos para ver el post " + postId + "."); // <-- CORREGIDO
-    res.json({
-        ok: true,
-        post: post
+    res.json({ 
+        ok: true, 
+        post: post,
+        userCredits: user.credits // <-- ¡LÍNEA AÑADIDA!
     });
 });
 
