@@ -14,7 +14,6 @@ const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
 // --- FIN DE LA CONFIGURACIÓN ---
 
-
 // --- BASE DE DATOS CON PERSISTENCIA EN ARCHIVO JSON ---
 const DB_FILE = 'database.json';
 
@@ -51,25 +50,22 @@ let pendingPayments = db.pendingPayments;
 let pendingRecargas = db.pendingRecargas;
 // --- FIN DE LA BASE DE DATOS ---
 
-
 // INICIO DE LA APLICACIÓN EXPRESS (DEBE ESTAR DESPUÉS DE CARGAR LAS VARIABLES Y LA DB)
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 // FIN DEL INICIO DE EXPRESS
 
-
 // --- FUNCIONES AUXILIARES ---
 async function sendTelegramAlert(message) {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-
+    const url = `https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/sendMessage`;
     try {
         await axios.post(url, {
             chat_id: TELEGRAM_GROUP_CHAT_ID,
             text: message,
             parse_mode: 'HTML'
         });
-        console.log("Alerta enviada al grupo de Telegram."); // <-- LOG ARREGLADO
+        console.log("Alerta enviada al grupo de Telegram.");
     } catch (error) {
         console.error('Error enviando alerta a Telegram:', error.response ? error.response.data : error.message);
     }
@@ -79,7 +75,6 @@ function findUserById(userId) {
     return users[userId];
 }
 // --- FIN DE FUNCIONES AUXILIARES ---
-
 
 // --- RUTAS DE AUTENTICACIÓN ---
 app.post('/api/auth/register', async (req, res) => {
@@ -115,6 +110,8 @@ app.post('/api/auth/login', async (req, res) => {
     console.log(`Usuario '\${user.username}' inició sesión.`);
     res.json({ ok: true, message: 'Inicio de sesión exitoso.', user: { id: user.id, username: user.username, credits: user.credits } });
 });
+// --- FIN DE RUTAS DE AUTENTICACIÓN ---
+
 // --- NUEVAS RUTAS DE RECARGA ---
 app.post('/api/solicitar-recarga', async (req, res) => {
     const { userId, creditos } = req.body;
@@ -145,9 +142,12 @@ app.post('/api/registrar-pago-recarga', async (req, res) => {
     }
     const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_${recargaId}`;
     await sendTelegramAlert(mensaje);
-    console.log(`Notificación de recarga \${recargaId} enviada a Telegram.`); // <-- LOG ARREGLADO
+    console.log(`Notificación de recarga \${recargaId} enviada a Telegram.`);
     res.json({ ok: true, message: 'Pago de recarga registrado. El administrador ha sido notificado.' });
 });
+// --- FIN DE RUTAS DE RECARGA ---
+
+
 // --- RUTAS DE LA APLICACIÓN ---
 app.post('/api/solicitar-quemada', async (req, res) => {
     const { userId, nombre, redes, edad, origen, evidencias, fotoBase64 } = req.body;
@@ -218,10 +218,12 @@ app.post('/api/telegram-webhook', async (req, res) => {
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
     }
-    // --- Lógica para aprobar/rechazar recargas (VERSIÓN ARREGLADA) ---
-    else if (text.includes('/approve_recarga_')) {
-        const parts = text.split('/approve_recarga_');
-        const recargaId = parts[1];
+    // --- Lógica para aprobar/rechazar recargas (VERSIÓN 100% CORREGIDA) ---
+    else if (text.startsWith('/approve_recarga_')) {
+        let recargaId = text.replace('/approve_recarga_', '');
+        // <-- ¡LÍNEA MÁGICA! Esto limpia el comando si Telegram le añade @...
+        recargaId = recargaId.split('@')[0]; 
+
         console.log(`>>> Comando de aprobación recibido. Intentando aprobar recarga con ID: \${recargaId}`);
         const recarga = pendingRecargas[recargaId];
         if (recarga) {
@@ -239,9 +241,11 @@ app.post('/api/telegram-webhook', async (req, res) => {
         } else {
             console.log(`❌ Error: Recarga con ID \${recargaId} no encontrada.`);
         }
-    } else if (text.includes('/reject_recarga_')) {
-        const parts = text.split('/reject_recarga_');
-        const recargaId = parts[1];
+    } else if (text.startsWith('/reject_recarga_')) {
+        let recargaId = text.replace('/reject_recarga_', '');
+        // <-- ¡LÍNEA MÁGICA! Esto limpia el comando si Telegram le añade @...
+        recargaId = recargaId.split('@')[0];
+
         console.log(`>>> Comando de rechazo recibido. Intentando rechazar recarga con ID: \${recargaId}`);
         if (pendingRecargas[recargaId]) {
             delete pendingRecargas[recargaId];
@@ -252,6 +256,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             console.log(`❌ Error: Recarga con ID \${recargaId} no encontrada para rechazar.`);
         }
     }
+
     res.sendStatus(200);
 });
 
@@ -284,6 +289,7 @@ app.get('/api/muro-publico', (req, res) => {
         .map(p => ({ id: p.id, nombre: p.nombre }));
     res.json({ ok: true, posts: publicPosts });
 });
+// --- FIN DE RUTAS DE LA APLICACIÓN ---
 
 
 // --- Middleware de errores (DEBE ESTAR AL FINAL) ---
