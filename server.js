@@ -57,8 +57,8 @@ let pendingRecargas = db.pendingRecargas;
 
 // --- FUNCIONES AUXILIARES ---
 async function sendTelegramAlert(message) {
-    // La URL está arreglada. Sin la barra invertida antes de $
-    const url = `https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    // La URL está arreglada. Sin la barra invertida antes de \$
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
     try {
         await axios.post(url, {
             chat_id: TELEGRAM_GROUP_CHAT_ID,
@@ -91,7 +91,7 @@ app.post('/api/auth/register', async (req, res) => {
     const userId = 'user_' + db.nextUserId++;
     users[userId] = { id: userId, username, passwordHash, credits: 0 };
     saveDatabase(); // <-- GUARDAR CAMBIO
-    console.log(`Usuario '\${username}' registrado con ID \${userId}.`);
+    console.log(`Usuario '${username}' registrado con ID ${userId}.`);
     res.json({ ok: true, message: 'Usuario creado con éxito.' });
 });
 
@@ -108,7 +108,7 @@ app.post('/api/auth/login', async (req, res) => {
         console.log("Login fallido: contraseña incorrecta");
         return res.status(401).json({ ok: false, message: 'Usuario o contraseña incorrectos.' });
     }
-    console.log(`Usuario '\${user.username}' inició sesión.`);
+    console.log(`Usuario '${user.username}' inició sesión.`);
     res.json({ ok: true, message: 'Inicio de sesión exitoso.', user: { id: user.id, username: user.username, credits: user.credits } });
 });
 // --- NUEVAS RUTAS DE RECARGA ---
@@ -141,7 +141,7 @@ app.post('/api/registrar-pago-recarga', async (req, res) => {
     }
     const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_${recargaId}`;
     await sendTelegramAlert(mensaje);
-    console.log(`Notificación de recarga \${recargaId} enviada a Telegram.`);
+    console.log(`Notificación de recarga ${recargaId} enviada a Telegram.`);
     res.json({ ok: true, message: 'Pago de recarga registrado. El administrador ha sido notificado.' });
 });
 // --- RUTAS DE LA APLICACIÓN ---
@@ -155,12 +155,12 @@ app.post('/api/solicitar-quemada', async (req, res) => {
         return res.status(404).json({ ok: false, message: 'Usuario no encontrado.' });
     }
     if (user.credits < COSTO_QUemar) {
-        return res.status(400).json({ ok: false, message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes \${user.credits}.` });
+        return res.status(400).json({ ok: false, message: `Créditos insuficientes. Necesitas ${COSTO_QUemar} y tienes ${user.credits}.` });
     }
     const postId = 'post_' + db.nextPostId++;
     posts[postId] = { id: postId, userId, nombre, redes, edad, origen, evidencias, fotoBase64, fechaCreacion: new Date().toISOString(), estado: 'PENDIENTE_VALIDACION' };
     saveDatabase(); // <-- GUARDAR CAMBIO
-    console.log(`Solicitud de quemada para '\${nombre}' recibida (Post ID: ${postId}).`);
+    console.log(`Solicitud de quemada para '${nombre}' recibida (Post ID: ${postId}).`);
     res.json({ ok: true, message: 'Solicitud recibida. Ahora realiza el pago y espera la validación.', postId });
 });
 
@@ -195,8 +195,8 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 post.fechaPago = new Date().toISOString();
                 user.credits -= COSTO_QUemar;
                 saveDatabase(); // <-- GUARDAR CAMBIO
-                console.log(`✅ Post \${post.id} PUBLICADO.`);
-                await sendTelegramAlert(`✅ Pago <b>\${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`);
+                console.log(`✅ Post ${post.id} PUBLICADO.`);
+                await sendTelegramAlert(`✅ Pago <b>${paymentId}</b> APROBADO. Post de <i>${post.nombre}</i> publicado.`);
             }
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
@@ -208,8 +208,8 @@ app.post('/api/telegram-webhook', async (req, res) => {
             const post = posts[payment.postId];
             post.estado = 'RECHAZADO';
             saveDatabase(); // <-- GUARDAR CAMBIO
-            console.log(`❌ Post \${post.id} RECHAZADO.`);
-            await sendTelegramAlert(`❌ Pago <b>\${paymentId}</b> RECHAZADO.`);
+            console.log(`❌ Post ${post.id} RECHAZADO.`);
+            await sendTelegramAlert(`❌ Pago <b>${paymentId}</b> RECHAZADO.`);
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
@@ -223,8 +223,8 @@ app.post('/api/telegram-webhook', async (req, res) => {
             if (user) {
                 user.credits += recarga.creditos;
                 saveDatabase(); // <-- GUARDAR CAMBIO
-                console.log(`✅ Recarga \${recargaId} APROBADA. Se añadieron ${recarga.creditos} créditos al usuario ${user.username}.`);
-                await sendTelegramAlert(`✅ Recarga <b>${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene \${user.credits} créditos.`);
+                console.log(`✅ Recarga ${recargaId} APROBADA. Se añadieron ${recarga.creditos} créditos al usuario ${user.username}.`);
+                await sendTelegramAlert(`✅ Recarga <b>${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene ${user.credits} créditos.`);
             }
             delete pendingRecargas[recargaId];
             saveDatabase(); // <-- GUARDAR CAMBIO
@@ -233,8 +233,8 @@ app.post('/api/telegram-webhook', async (req, res) => {
         const recargaId = text.split('_')[2];
         if (pendingRecargas[recargaId]) {
             const recarga = pendingRecargas[recargaId];
-            console.log(`❌ Recarga \${recargaId} RECHAZADA.`);
-            await sendTelegramAlert(`❌ Recarga <b>\${recargaId}</b> RECHAZADA.`);
+            console.log(`❌ Recarga ${recargaId} RECHAZADA.`);
+            await sendTelegramAlert(`❌ Recarga <b>${recargaId}</b> RECHAZADA.`);
             delete pendingRecargas[recargaId];
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
@@ -252,7 +252,7 @@ app.post('/api/posts/detalles', async (req, res) => {
         return res.status(404).json({ ok: false, message: 'Usuario no encontrado.' });
     }
     if (user.credits < COSTO_VER_CHISME) {
-        return res.status(400).json({ ok: false, message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.` });
+        return res.status(400).json({ ok: false, message: `Créditos insuficientes. Necesitas ${COSTO_VER_CHISME} para ver el chisme.` });
     }
     const post = posts[postId];
     if (!post || post.estado !== 'PUBLICADO') {
@@ -260,7 +260,7 @@ app.post('/api/posts/detalles', async (req, res) => {
     }
     user.credits -= COSTO_VER_CHISME;
     saveDatabase(); // <-- GUARDAR CAMBIO
-    console.log(`Usuario ${user.username} gastó ${COSTO_VER_CHISME} créditos para ver el post \${postId}.`);
+    console.log(`Usuario ${user.username} gastó ${COSTO_VER_CHISME} créditos para ver el post ${postId}.`);
     res.json({ ok: true, post: post });
 });
 
@@ -296,12 +296,12 @@ if (Object.keys(posts).length === 0) {
         fechaPago: new Date().toISOString()
     };
     saveDatabase(); // <-- GUARDAR CAMBIO
-    console.log(`✅ Post de ejemplo creado: \${posts[ejemploPostId].nombre} (ID: \${ejemploPostId})`);
+    console.log(`✅ Post de ejemplo creado: ${posts[ejemploPostId].nombre} (ID: ${ejemploPostId})`);
 }
 // --- FIN DEL CÓDIGO DE PRUEBA ---
 
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🔥 Quema Infiel corriendo en http://localhost:\${PORT}`);
+    console.log(`🔥 Quema Infiel corriendo en http://localhost:${PORT}`);
 });
