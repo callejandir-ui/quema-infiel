@@ -709,17 +709,10 @@
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.message);
 
-                    // <-- ¡LÍNEAS AÑADIDAS PARA ACTUALIZAR CRÉDITOS!
-                    if (data.userCredits !== undefined) {
-                        currentUser.credits = data.userCredits;
-                        updateUserUI();
-                        localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
-                    }
-
                     // Éxito
                     alert('¡El infiel ha sido publicado exitosamente en el muro!');
                     modalQuemar.style.display = 'none';
-                    location.reload(); // El reload ya lo actualiza, pero esto lo hace a prueba de fallos.
+                    location.reload(); // Recargamos para ver el nuevo post en el muro
 
                 } catch (err) {
                     console.error("Error en publicación directa:", err);
@@ -843,13 +836,6 @@
                                 const fullPost = data.post;
                                 detalleNombre.textContent = '👹 Detalles de ' + fullPost.nombre + ' 👹';
 
-                                // <-- ¡LÍNEAS AÑADIDAS PARA ACTUALIZAR CRÉDITOS!
-                                if (data.userCredits !== undefined) {
-                                    currentUser.credits = data.userCredits;
-                                    updateUserUI();
-                                    localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
-                                }
-
                                 // <-- ¡LÍNEA CORREGIDA! Se usa concatenación simple para evitar errores.
                                 detalleContenido.innerHTML =
                                     '<p><strong>Redes:</strong> ' + fullPost.redes + '</p>' +
@@ -860,6 +846,7 @@
                                     '<img src="' + fullPost.fotoBase64 + '" alt="Evidencia de ' + fullPost.nombre + '">';
 
                                 modalDetalle.style.display = 'flex';
+                                updateUserUI();
                             } catch (err) {
                                 alert(err.message);
                             }
