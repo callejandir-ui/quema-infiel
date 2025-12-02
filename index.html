@@ -640,14 +640,16 @@
             });
 
             // --- LÓGICA DE LA APLICACIÓN ---
-            function requireLogin(callback) {
-                if (!currentUser) {
-                    alert('Debes iniciar sesión para realizar esta acción.');
-                    modalAuth.style.display = 'flex';
-                    return;
-                }
-                callback();
-            }
+function requireLogin(callback) {
+    if (!currentUser) {
+        alert('Debes iniciar sesión para realizar esta acción.');
+        modalAuth.style.display = 'flex';
+        return;
+    }
+    // Verificar créditos para VER DETALLES aquí es redundante, el servidor ya lo hace.
+    // El error venía de otro lugar, pero esta es la forma segura de mostrar mensajes.
+    callback();
+}
 
             btnQuemar.addEventListener('click', () => requireLogin(() => modalQuemar.style.display = 'flex'));
             btnCerrar.addEventListener('click', () => modalQuemar.style.display = 'none');
