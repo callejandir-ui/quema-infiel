@@ -742,83 +742,91 @@
             btnYaPague.addEventListener('click', async () => { /* Esta función ahora es obsoleta para el flujo principal, pero la dejamos por si acaso */ });
 
             // --- LÓGICA DE RECARGA ---
-            function resetModalRecarga() {
-                inputCreditos.value = '';
-                totalPagar.textContent = '0.00';
-                qrCodeRecarga.style.display = 'none';
-                btnGenerarPagoRecarga.style.display = 'block';
-                btnYaPagueRecarga.style.display = 'none';
-                estadoPagoRecarga.innerHTML = '';
-                recargaIdActual = null;
-            }
+             function resetModalRecarga() {
+     inputCreditos.value = '';
+     totalPagar.textContent = '0.00';
+     qrCodeRecarga.style.display = 'none';
+     btnGenerarPagoRecarga.style.display = 'block';
+     btnYaPagueRecarga.style.display = 'none';
+     estadoPagoRecarga.innerHTML = '';
+     recargaIdActual = null;
+ }
+ btnCerrarRecargar.addEventListener('click', () => modalRecargar.style.display = 'none');
+ inputCreditos.addEventListener('input', () => {
+     const creditos = parseInt(inputCreditos.value) || 0;
+     const total = creditos * 1.00;
+     totalPagar.textContent = total.toFixed(2);
+ });
+ btnGenerarPagoRecarga.addEventListener('click', async () => {
+     const creditos = parseInt(inputCreditos.value);
+     if (!creditos || creditos <= 0) {
+         alert('Ingresa una cantidad válida de créditos.');
+         return;
+     }
+     try {
+         estadoPagoRecarga.innerHTML = '<p>Generando solicitud de recarga...</p>';
+         const res = await fetch('/api/solicitar-recarga', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ userId: currentUser.id, creditos })
+         });
+         const data = await res.json();
+         if (!res.ok) throw new Error(data.message);
 
-            btnCerrarRecargar.addEventListener('click', () => modalRecargar.style.display = 'none');
+         recargaIdActual = data.recargaId;
+         qrCodeRecarga.style.display = 'block';
+         btnGenerarPagoRecarga.style.display = 'none';
+         btnYaPagueRecarga.style.display = 'block';
+         estadoPagoRecarga.innerHTML = '<p>Solicitud generada. Paga S/ ' + data.monto.toFixed(2) + ' y presiona "Ya realicé el pago".</p>';
+     } catch (err) {
+         console.error("Error en solicitud de recarga:", err);
+         estadoPagoRecarga.textContent = err.message;
+     }
+ });
 
-            inputCreditos.addEventListener('input', () => {
-                const creditos = parseInt(inputCreditos.value) || 0;
-                const total = creditos * 1.00;
-                totalPagar.textContent = total.toFixed(2);
-            });
+ // <-- ¡INICIO DEL CAMBIO CLAVE! -->
+ btnYaPagueRecarga.addEventListener('click', async () => {
+     if (!recargaIdActual) return;
+     try {
+         estadoPagoRecarga.innerHTML = '<p>Notificando pago...</p>';
+         btnYaPagueRecarga.disabled = true;
 
-            btnGenerarPagoRecarga.addEventListener('click', async () => {
-                const creditos = parseInt(inputCreditos.value);
-                if (!creditos || creditos <= 0) {
-                    alert('Ingresa una cantidad válida de créditos.');
-                    return;
-                }
-                try {
-                    estadoPagoRecarga.innerHTML = '<p>Generando solicitud de recarga...</p>';
-                    const res = await fetch('/api/solicitar-recarga', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            userId: currentUser.id,
-                            creditos
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.message);
-                    recargaIdActual = data.recargaId;
-                    qrCodeRecarga.style.display = 'block';
-                    btnGenerarPagoRecarga.style.display = 'none';
-                    btnYaPagueRecarga.style.display = 'block';
-                    estadoPagoRecarga.innerHTML = '<p>Solicitud generada. Paga S/ ' + data.monto.toFixed(2) + ' y presiona "Ya realicé el pago".</p>';
-                } catch (err) {
-                    console.error("Error en solicitud de recarga:", err);
-                    estadoPagoRecarga.textContent = err.message;
-                }
-            });
+         const res = await fetch('/api/registrar-pago-recarga', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ recargaId: recargaIdActual })
+         });
 
-            btnYaPagueRecarga.addEventListener('click', async () => {
-                if (!recargaIdActual) return;
-                try {
-                    estadoPagoRecarga.innerHTML = '<p>Notificando pago...</p>';
-                    btnYaPagueRecarga.disabled = true;
-                    const res = await fetch('/api/registrar-pago-recarga', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            recargaId: recargaIdActual
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.message);
-                    estadoPagoRecarga.innerHTML = '<p>' + data.message + '</p><p>Tus créditos serán añadidos pronto.</p>';
-                    setTimeout(() => {
-                        modalRecargar.style.display = 'none';
-                        location.reload();
-                    }, 5000);
-                } catch (err) {
-                    console.error("Error al registrar pago de recarga:", err);
-                    estadoPagoRecarga.textContent = err.message;
-                } finally {
-                    btnYaPagueRecarga.disabled = false;
-                }
-            });
+         const data = await res.json();
+
+         if (!res.ok) {
+             throw new Error(data.message);
+         }
+
+         // Si el pago se registró, actualizamos los créditos del usuario localmente
+         // Esto es un "anticipo" para que el usuario vea el cambio de inmediato.
+         // El admin de Telegram todavía tiene que aprobarlo.
+         const creditosRecargados = parseInt(inputCreditos.value) || 0;
+         currentUser.credits += creditosRecargados;
+         
+         // Actualizamos la UI y guardamos en localStorage
+         updateUserUI(); 
+         localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
+
+         estadoPagoRecarga.innerHTML = '<p style="color: #00ff00;">' + data.message + '</p><p>Tus créditos se reflejarán tras la aprobación final.</p>';
+         
+         // Cerramos el modal después de un corto tiempo
+         setTimeout(() => {
+             modalRecargar.style.display = 'none';
+         }, 3000);
+
+     } catch (err) {
+         console.error("Error al registrar pago de recarga:", err);
+         estadoPagoRecarga.textContent = err.message;
+     } finally {
+         btnYaPagueRecarga.disabled = false;
+     }
+ });
 
             // --- Cargar Muro y Ver Detalles ---
             async function cargarMuro() {
