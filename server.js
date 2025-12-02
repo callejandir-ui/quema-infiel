@@ -5,18 +5,15 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs'); // <-- Módulo para manejar archivos
 
-const app = express();
-app.use(express.json({ limit: '10mb' }));
-app.use(express.static(__dirname));
-
 // --- CONFIGURACIÓN ---
 // NOTA: Estas variables ahora se leerán desde las variables de entorno de Render
-// para mayor seguridad. Si no existen, se usarán estas como respaldo.
+// para mayor seguridad.
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_GROUP_CHAT_ID = parseInt(process.env.TELEGRAM_GROUP_CHAT_ID, 10) || -1003415057513;
+const TELEGRAM_GROUP_CHAT_ID = parseInt(process.env.TELEGRAM_GROUP_CHAT_ID, 10);
 const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
 // --- FIN DE LA CONFIGURACIÓN ---
+
 
 // --- BASE DE DATOS CON PERSISTENCIA EN ARCHIVO JSON ---
 const DB_FILE = 'database.json';
@@ -53,6 +50,13 @@ let posts = db.posts;
 let pendingPayments = db.pendingPayments;
 let pendingRecargas = db.pendingRecargas;
 // --- FIN DE LA BASE DE DATOS ---
+
+
+// INICIO DE LA APLICACIÓN EXPRESS (DEBE ESTAR DESPUÉS DE CARGAR LAS VARIABLES Y LA DB)
+const app = express();
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static(__dirname));
+// FIN DEL INICIO DE EXPRESS
 
 
 // --- FUNCIONES AUXILIARES ---
