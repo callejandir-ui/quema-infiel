@@ -99,8 +99,10 @@
     </div>
 
     <script>
-        const API_URL = 'https://quema-infiel.onrender.com', // <-- ¡COMA AÑADIDA!
-    
+        // ¡IMPORTANTE! Asegúrate que esta URL sea la EXACTA de tu app en Render.
+        const API_URL = 'https://quema-infiel.onrender.com'; 
+
+        let currentUser = null;
 
         // Elementos del DOM
         const authContainer = document.getElementById('auth-container');
@@ -244,7 +246,6 @@
 
             if (data.ok) {
                 const fullPost = data.post;
-                // <-- ¡LÍNEA CORREGIDA! Se usan comillas invertidas ` ` en lugar de comillas simples ' '
                 postDetailContent.innerHTML = `
                     <div class="post-detail">
                         <h2>\${fullPost.nombre}</h2>
