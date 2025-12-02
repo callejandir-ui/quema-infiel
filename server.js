@@ -10,8 +10,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
 // --- CONFIGURACIÓN ---
-const TELEGRAM_BOT_TOKEN = '8199464475:AAGMF50zaVRZIHmwANB_QokhWuDuqJOfB5w'; // <-- Pega tu token aquí
-const TELEGRAM_GROUP_CHAT_ID = -1002102336326; // <-- Pega el ID de tu grupo aquí
+// NOTA: Estas variables ahora se leerán desde las variables de entorno de Render
+// para mayor seguridad. Si no existen, se usarán estas como respaldo.
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8199464475:AAGMF50zaVRZIHmwANB_QokhWuDuqJOfB5w';
+const TELEGRAM_GROUP_CHAT_ID = parseInt(process.env.TELEGRAM_GROUP_CHAT_ID, 10) || -1002102336326;
 const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
 // --- FIN DE LA CONFIGURACIÓN ---
@@ -52,12 +54,10 @@ let pendingPayments = db.pendingPayments;
 let pendingRecargas = db.pendingRecargas;
 // --- FIN DE LA BASE DE DATOS ---
 
+
 // --- FUNCIONES AUXILIARES ---
 async function sendTelegramAlert(message) {
-    if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === 'AQUI_VA_EL_TOKEN_DE_TU_BOT') {
-        console.log("ADVERTENCIA: Token de Telegram no configurado.");
-        return;
-    }
+    // La URL está arreglada. Sin la barra invertida antes de $
     const url = `https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/sendMessage`;
     try {
         await axios.post(url, {
@@ -75,6 +75,7 @@ function findUserById(userId) {
     return users[userId];
 }
 // --- FIN DE FUNCIONES AUXILIARES ---
+
 
 // --- RUTAS DE AUTENTICACIÓN ---
 app.post('/api/auth/register', async (req, res) => {
@@ -110,7 +111,6 @@ app.post('/api/auth/login', async (req, res) => {
     console.log(`Usuario '\${user.username}' inició sesión.`);
     res.json({ ok: true, message: 'Inicio de sesión exitoso.', user: { id: user.id, username: user.username, credits: user.credits } });
 });
-
 // --- NUEVAS RUTAS DE RECARGA ---
 app.post('/api/solicitar-recarga', async (req, res) => {
     const { userId, creditos } = req.body;
@@ -144,7 +144,6 @@ app.post('/api/registrar-pago-recarga', async (req, res) => {
     console.log(`Notificación de recarga \${recargaId} enviada a Telegram.`);
     res.json({ ok: true, message: 'Pago de recarga registrado. El administrador ha sido notificado.' });
 });
-
 // --- RUTAS DE LA APLICACIÓN ---
 app.post('/api/solicitar-quemada', async (req, res) => {
     const { userId, nombre, redes, edad, origen, evidencias, fotoBase64 } = req.body;
@@ -273,6 +272,7 @@ app.get('/api/muro-publico', (req, res) => {
     res.json({ ok: true, posts: publicPosts });
 });
 
+
 // --- Middleware de errores (DEBE ESTAR AL FINAL) ---
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -299,6 +299,7 @@ if (Object.keys(posts).length === 0) {
     console.log(`✅ Post de ejemplo creado: \${posts[ejemploPostId].nombre} (ID: \${ejemploPostId})`);
 }
 // --- FIN DEL CÓDIGO DE PRUEBA ---
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
