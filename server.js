@@ -10,8 +10,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
 // --- CONFIGURACIÓN ---
-const TELEGRAM_BOT_TOKEN = 'AQUI_VA_EL_TOKEN_DE_TU_BOT'; // <-- Pega tu token aquí
-const TELEGRAM_GROUP_CHAT_ID = -1001234567890; // <-- Pega el ID de tu grupo aquí
+const TELEGRAM_BOT_TOKEN = '8199464475:AAGMF50zaVRZIHmwANB_QokhWuDuqJOfB5w'; // <-- Pega tu token aquí
+const TELEGRAM_GROUP_CHAT_ID = -5093610630; // <-- Pega el ID de tu grupo aquí
 const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
 // --- FIN DE LA CONFIGURACIÓN ---
