@@ -8,7 +8,7 @@ const fs = require('fs'); // <-- Módulo para manejar archivos
 // --- CONFIGURACIÓN ---
 // NOTA: Estas variables ahora se leerán desde las variables de entorno de Render
 // para mayor seguridad.
-const TELEGRAM_BOT_TOKEN = "8549907358:AAGF_RFJ45DQc0KwyQZB4aHKFyNVtY_Mi-o";
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_GROUP_CHAT_ID = parseInt(process.env.TELEGRAM_GROUP_CHAT_ID, 10);
 const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
@@ -68,7 +68,7 @@ async function sendTelegramAlert(message) {
             text: message,
             parse_mode: 'HTML'
         });
-        console.log(">>> ALERTA ENVIADA A TELEGRAM <<<");
+        console.log("Alerta enviada al grupo de Telegram."); // <-- LOG ARREGLADO
     } catch (error) {
         console.error('Error enviando alerta a Telegram:', error.response ? error.response.data : error.message);
     }
@@ -144,7 +144,7 @@ app.post('/api/registrar-pago-recarga', async (req, res) => {
     }
     const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_${recargaId}`;
     await sendTelegramAlert(mensaje);
-    console.log(`Notificación de recarga \${recargaId} enviada a Telegram.`);
+    console.log(`Notificación de recarga \${recargaId} enviada a Telegram.`); // <-- LOG ARREGLADO
     res.json({ ok: true, message: 'Pago de recarga registrado. El administrador ha sido notificado.' });
 });
 // --- RUTAS DE LA APLICACIÓN ---
@@ -217,29 +217,38 @@ app.post('/api/telegram-webhook', async (req, res) => {
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
     }
-    // --- Lógica para aprobar/rechazar recargas ---
-    else if (text.startsWith('/approve_recarga_')) {
-        const recargaId = text.split('_').slice(2).join('_');
+    // --- Lógica para aprobar/rechazar recargas (VERSIÓN ARREGLADA) ---
+    else if (text.includes('/approve_recarga_')) {
+        const parts = text.split('/approve_recarga_');
+        const recargaId = parts[1];
+        console.log(`>>> Comando de aprobación recibido. Intentando aprobar recarga con ID: \${recargaId}`);
         const recarga = pendingRecargas[recargaId];
         if (recarga) {
             const user = findUserById(recarga.userId);
             if (user) {
                 user.credits += recarga.creditos;
                 saveDatabase(); // <-- GUARDAR CAMBIO
-                console.log(`✅ Recarga \${recargaId} APROBADA. Se añadieron ${recarga.creditos} créditos al usuario ${user.username}.`);
-                await sendTelegramAlert(`✅ Recarga <b>${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene \${user.credits} créditos.`);
+                console.log(`✅ Recarga ${recargaId} APROBADA. Se añadieron ${recarga.creditos} créditos al usuario \${user.username}.`);
+                await sendTelegramAlert(`✅ Recarga <b>\${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene ${user.credits} créditos.`);
+            } else {
+                console.log(`❌ Error: Usuario \${recarga.userId} no encontrado para la recarga \${recargaId}.`);
             }
             delete pendingRecargas[recargaId];
             saveDatabase(); // <-- GUARDAR CAMBIO
+        } else {
+            console.log(`❌ Error: Recarga con ID \${recargaId} no encontrada.`);
         }
-    } else if (text.startsWith('/reject_recarga_')) {
-        const recargaId = text.split('_').slice(2).join('_');
+    } else if (text.includes('/reject_recarga_')) {
+        const parts = text.split('/reject_recarga_');
+        const recargaId = parts[1];
+        console.log(`>>> Comando de rechazo recibido. Intentando rechazar recarga con ID: \${recargaId}`);
         if (pendingRecargas[recargaId]) {
-            const recarga = pendingRecargas[recargaId];
-            console.log(`❌ Recarga \${recargaId} RECHAZADA.`);
-            await sendTelegramAlert(`❌ Recarga <b>\${recargaId}</b> RECHAZADA.`);
             delete pendingRecargas[recargaId];
             saveDatabase(); // <-- GUARDAR CAMBIO
+            console.log(`❌ Recarga \${recargaId} RECHAZADA.`);
+            await sendTelegramAlert(`❌ Recarga <b>\${recargaId}</b> RECHAZADA.`);
+        } else {
+            console.log(`❌ Error: Recarga con ID \${recargaId} no encontrada para rechazar.`);
         }
     }
     res.sendStatus(200);
@@ -275,21 +284,6 @@ app.get('/api/muro-publico', (req, res) => {
     res.json({ ok: true, posts: publicPosts });
 });
 
-// --- RUTA DE DIAGNÓSTICO ---
-app.get('/api/test-telegram', async (req, res) => {
-    console.log(">>> INICIANDO TEST DE CONEXIÓN A TELEGRAM...");
-    try {
-        const testUrl = `https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/getMe`;
-        const response = await axios.get(testUrl);
-        console.log(">>> TEST DE TELEGRAM EXITOSO:", response.data);
-        res.json({ ok: true, message: "Conexión a Telegram exitosa.", botInfo: response.data.result });
-    } catch (error) {
-        console.error(">>> ERROR EN EL TEST DE TELEGRAM:", error.response ? error.response.data : error.message);
-        res.status(500).json({ ok: false, message: "Error al conectar con Telegram.", error: error.response ? error.response.data : error.message });
-    }
-});
-// --- FIN DE LA RUTA DE DIAGNÓSTICO ---
-
 
 // --- Middleware de errores (DEBE ESTAR AL FINAL) ---
 app.use((err, req, res, next) => {
@@ -314,7 +308,7 @@ if (Object.keys(posts).length === 0) {
         fechaPago: new Date().toISOString()
     };
     saveDatabase(); // <-- GUARDAR CAMBIO
-    console.log(`✅ Post de ejemplo creado: ${posts[ejemploPostId].nombre} (ID: ${ejemploPostId})`);
+    console.log(`✅ Post de ejemplo creado: \${posts[ejemploPostId].nombre} (ID: \${ejemploPostId})`);
 }
 // --- FIN DEL CÓDIGO DE PRUEBA ---
 
