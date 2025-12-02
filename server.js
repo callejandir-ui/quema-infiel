@@ -68,7 +68,7 @@ async function sendTelegramAlert(message) {
             text: message,
             parse_mode: 'HTML'
         });
-        console.log("Alerta enviada al grupo de Telegram.");
+        console.log(">>> ALERTA ENVIADA A TELEGRAM <<<");
     } catch (error) {
         console.error('Error enviando alerta a Telegram:', error.response ? error.response.data : error.message);
     }
