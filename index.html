@@ -655,89 +655,89 @@
             btnCerrarDetalle.addEventListener('click', () => modalDetalle.style.display = 'none');
 
             // <-- NUEVA LÓGICA: Publicar y descontar al instante
-            btnGuardar.addEventListener('click', () => requireLogin(async () => {
-                const nombre = inputNombre.value.trim();
-                if (!nombre) {
-                    alert("¡El nombre del culpable es obligatorio! 😈");
-                    return;
-                }
+           btnGuardar.addEventListener('click', () => requireLogin(async () => {
+    const nombre = inputNombre.value.trim();
+    if (!nombre) {
+        alert("¡El nombre del culpable es obligatorio! 😈");
+        return;
+    }
 
-                // Verificar y descontar créditos EN EL CLIENTE
-                if (currentUser.credits < 10) {
-                    alert('Créditos insuficientes. Necesitas 10 créditos para registrar a un infiel. ¡Recarga tu poder!');
-                    modalQuemar.style.display = 'none';
-                    modalRecargar.style.display = 'flex';
-                    return;
-                }
+    // Verificar y descontar créditos EN EL CLIENTE
+    if (currentUser.credits < 10) {
+        alert('Créditos insuficientes. Necesitas 10 créditos para registrar a un infiel. ¡Recarga tu poder!');
+        modalQuemar.style.display = 'none';
+        modalRecargar.style.display = 'flex';
+        return;
+    }
 
-                // Si llega aquí, es porque tiene créditos. Descontamos aquí mismo.
-                currentUser.credits -= 10;
-                updateUserUI(); // Actualizamos la UI inmediatamente
-                localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser)); // Guardamos el cambio localmente
+    // Si llega aquí, es porque tiene créditos. Descontamos aquí mismo.
+    currentUser.credits -= 10;
+    updateUserUI(); // Actualizamos la UI inmediatamente
+    localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser)); // Guardamos el cambio localmente
 
-                const payload = {
-                    userId: currentUser.id,
-                    nombre,
-                    redes: inputRedes.value.trim(),
-                    edad: inputEdad.value.trim(),
-                    origen: inputOrigen.value.trim(),
-                    evidencias: inputEvidencias.value.trim()
-                };
-                const file = inputFotos.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = ev => {
-                        payload.fotoBase64 = ev.target.result;
-                        enviarSolicitudDirecta(payload);
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    payload.fotoBase64 = null;
-                    enviarSolicitudDirecta(payload);
-                }
-            }));
+    const payload = {
+        userId: currentUser.id,
+        nombre,
+        redes: inputRedes.value.trim(),
+        edad: inputEdad.value.trim(),
+        origen: inputOrigen.value.trim(),
+        evidencias: inputEvidencias.value.trim()
+    };
+    const file = inputFotos.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            payload.fotoBase64 = ev.target.result;
+            enviarSolicitudDirecta(payload);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        payload.fotoBase64 = null;
+        enviarSolicitudDirecta(payload);
+    }
+}));
 
             // <-- ¡FUNCIÓN MODIFICADA PARA MANEJAR FOTOS NULAS!
             async function enviarSolicitudDirecta(payload) {
-                try {
-                    estadoPago.style.display = "block";
-                    estadoPago.innerHTML = '<p>👹 Publicando en el muro...</p>';
+    try {
+        estadoPago.style.display = "block";
+        estadoPago.innerHTML = '<p>👹 Publicando en el muro...</p>';
 
-                    // <-- ¡CAMBIO CLAVE AQUÍ!
-                    // Si no hay foto, nos aseguramos de que el valor sea null en lugar de "null" (string)
-                    if (!payload.fotoBase64 || payload.fotoBase64.trim() === '') {
-                        payload.fotoBase64 = null;
-                    }
+        // <-- ¡CAMBIO CLAVE AQUÍ!
+        // Si no hay foto, nos aseguramos de que el valor sea null en lugar de "null" (string)
+        if (!payload.fotoBase64 || payload.fotoBase64.trim() === '') {
+            payload.fotoBase64 = null;
+        }
 
-                    const res = await fetch("/api/publicar-directo", { // <-- NUEVO ENDPOINT
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.message);
+        const res = await fetch("/api/publicar-directo", { // <-- NUEVO ENDPOINT
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
 
-                    // <-- ¡LÍNEAS AÑADIDAS PARA ACTUALIZAR CRÉDITOS!
-                    if (data.userCredits !== undefined) {
-                        currentUser.credits = data.userCredits;
-                        updateUserUI();
-                        localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
-                    }
+        // <-- ¡LÍNEAS AÑADIDAS PARA ACTUALIZAR CRÉDITOS!
+        if (data.userCredits !== undefined) {
+            currentUser.credits = data.userCredits;
+            updateUserUI();
+            localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
+        }
 
-                    // Éxito
-                    alert('¡El infiel ha sido publicado exitosamente en el muro!');
-                    modalQuemar.style.display = 'none';
-                    location.reload(); // El reload ya lo actualiza, pero esto lo hace a prueba de fallos.
+        // Éxito
+        alert('¡El infiel ha sido publicado exitosamente en el muro!');
+        modalQuemar.style.display = 'none';
+        location.reload(); // El reload ya lo actualiza, pero esto lo hace a prueba de fallos.
 
-                } catch (err) {
-                    console.error("Error en publicación directa:", err);
-                    estadoPago.textContent = 'Error al publicar. Inténtalo de nuevo.';
-                    // Si falla, devolvemos los créditos
-                    currentUser.credits += 10;
-                    updateUserUI();
-                    localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
-                }
-            }
+    } catch (err) {
+        console.error("Error en publicación directa:", err);
+        estadoPago.textContent = 'Error al publicar. Inténtalo de nuevo.';
+        // Si falla, devolvemos los créditos
+        currentUser.credits += 10;
+        updateUserUI();
+        localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
+    }
+}
 
             btnYaPague.addEventListener('click', async () => { /* Esta función ahora es obsoleta para el flujo principal, pero la dejamos por si acaso */ });
 
@@ -837,49 +837,50 @@
                         
                         // <-- ¡FUNCIÓN MODIFICADA PARA MOSTRAR ERRORES!
                         card.addEventListener('click', () => requireLogin(async () => {
-                            try {
-                                estadoPago.style.display = 'block';
-                                estadoPago.innerHTML = '<p>👁️‍🗨️ Revelando el chisme...</p>';
+    try {
+        estadoPago.style.display = 'block';
+        estadoPago.innerHTML = '<p>👁️‍🗨️ Revelando el chisme...</p>';
 
-                                const res = await fetch('/api/posts/detalles', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        postId: post.id,
-                                        userId: currentUser.id
-                                    })
-                                });
-                                const data = await res.json();
-                                if (!res.ok) throw new Error(data.message);
-                                const fullPost = data.post;
+        const res = await fetch('/api/posts/detalles', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                postId: post.id,
+                userId: currentUser.id
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        const fullPost = data.post;
 
-                                if (data.userCredits !== undefined) {
-                                    currentUser.credits = data.userCredits;
-                                    updateUserUI();
-                                    localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
-                                }
-                                
-                                estadoPago.style.display = 'none';
+        // <-- ¡LÍNEAS AÑADIDAS PARA ACTUALIZAR CRÉDITOS!
+        if (data.userCredits !== undefined) {
+            currentUser.credits = data.userCredits;
+            updateUserUI();
+            localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
+        }
+        
+        estadoPago.style.display = 'none';
 
-                                detalleNombre.textContent = '👹 Detalles de ' + fullPost.nombre + ' 👹';
-                                detalleContenido.innerHTML =
-                                    '<p><strong>Redes:</strong> ' + fullPost.redes + '</p>' +
-                                    '<p><strong>Edad:</strong> ' + fullPost.edad + '</p>' +
-                                    '<p><strong>Origen:</strong> ' + fullPost.origen + '</p>' +
-                                    '<p><strong>EVIDENCIA COMPLETA:</strong></p>' +
-                                    '<p>' + fullPost.evidencias + '</p>' +
-                                    '<img src="' + fullPost.fotoBase64 + '" alt="Evidencia de ' + fullPost.nombre + '">';
+        detalleNombre.textContent = '👹 Detalles de ' + fullPost.nombre + ' 👹';
+        detalleContenido.innerHTML =
+            '<p><strong>Redes:</strong> ' + fullPost.redes + '</p>' +
+            '<p><strong>Edad:</strong> ' + fullPost.edad + '</p>' +
+            '<p><strong>Origen:</strong> ' + fullPost.origen + '</p>' +
+            '<p><strong>EVIDENCIA COMPLETA:</strong></p>' +
+            '<p>' + fullPost.evidencias + '</p>' +
+            '<img src="' + fullPost.fotoBase64 + '" alt="Evidencia de ' + fullPost.nombre + '">';
 
-                                modalDetalle.style.display = 'flex';
+        modalDetalle.style.display = 'flex';
 
-                            } catch (err) {
-                                console.error("Error al ver detalles:", err);
-                                estadoPago.style.display = 'none'; // <-- Ocultamos el "cargando"
-                                alert('Error: ' + err.message); // <-- <-- ¡LÍNEA CLAVE! Mostramos el error en un alert.
-                            }
-                        }));
+    } catch (err) {
+        console.error("Error al ver detalles:", err);
+        estadoPago.style.display = 'none'; // <-- Ocultamos el "cargando"
+        alert('Error: ' + err.message); // <-- <-- ¡LÍNEA CLAVE! Mostramos el error en un alert.
+    }
+}));
                         listaRegistros.appendChild(card);
                     });
                 } catch (err) {

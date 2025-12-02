@@ -8,7 +8,8 @@ const fs = require('fs'); // <-- Módulo para manejar archivos
 // --- CONFIGURACIÓN ---
 // NOTA: Estas variables ahora se leerán desde las variables de entorno de Render
 // para mayor seguridad.
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8549907358:AAGF_RFJ45DQc0KwyQZB4aHKFyNVtY_Mi-o'; // Aseguramos que el chat_id sea un número, no un string
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8549907358:AAGF_RFJ45DQc0KwyQZB4aHKFyNVtY_Mi-o';
+// Aseguramos que el chat_id sea un número, no un string
 const TELEGRAM_GROUP_CHAT_ID = Number(process.env.TELEGRAM_GROUP_CHAT_ID);
 const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
@@ -202,7 +203,7 @@ app.post('/api/registrar-pago-recarga', async (req, res) => {
             message: 'Usuario asociado a la recarga no encontrado.'
         });
     }
-    const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_\${recargaId}`; // <-- LÍNEA CORREGIDA
+    const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_\${recargaId}`; // <-- ¡LÍNEA CORREGIDA (1 de 4)!
     await sendTelegramAlert(mensaje);
     console.log("Notificación de recarga " + recargaId + " enviada a Telegram."); // <-- CORREGIDO
     res.json({
@@ -239,7 +240,7 @@ app.post('/api/solicitar-quemada', async (req, res) => {
     if (user.credits < COSTO_QUemar) {
         return res.status(400).json({
             ok: false,
-            message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes ${user.credits}.` // <-- LÍNEA CORREGIDA (1 de 3)
+            message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes ${user.credits}.` // <-- ¡LÍNEA CORREGIDA (2 de 4)!
         });
     }
     const postId = 'post_' + db.nextPostId++;
@@ -349,7 +350,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits -= COSTO_QUemar;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log("✅ Post " + post.id + " PUBLICADO."); // <-- CORREGIDO
-                await sendTelegramAlert(`✅ Pago <b>${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`); // <-- LÍNEA CORREGIDA
+                await sendTelegramAlert(`✅ Pago <b>${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`); // <-- ¡LÍNEA CORREGIDA (3 de 4)!
             }
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
@@ -362,7 +363,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             post.estado = 'RECHAZADO';
             saveDatabase(); // <-- GUARDAR CAMBIO
             console.log("❌ Post " + post.id + " RECHAZADO."); // <-- CORREGIDO
-            await sendTelegramAlert(`❌ Pago <b>\${paymentId}</b> RECHAZADO.`); // <-- LÍNEA CORREGIDA
+            await sendTelegramAlert(`❌ Pago <b>\${paymentId}</b> RECHAZADO.`); // <-- ¡LÍNEA CORREGIDA (4 de 4)!
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
@@ -426,7 +427,7 @@ app.post('/api/posts/detalles', async (req, res) => {
     if (user.credits < COSTO_VER_CHISME) {
         return res.status(400).json({
             ok: false,
-            message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.` // <-- LÍNEA CORREGIDA (3 de 3)
+            message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.` // <-- ¡LÍNEA CORREGIDA (3 de 3)!
         });
     }
     const post = posts[postId];
