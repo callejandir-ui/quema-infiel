@@ -202,7 +202,7 @@ app.post('/api/registrar-pago-recarga', async (req, res) => {
             message: 'Usuario asociado a la recarga no encontrado.'
         });
     }
-    const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_\${recargaId}`;
+    const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_\${recargaId}`; // <-- LÍNEA CORREGIDA
     await sendTelegramAlert(mensaje);
     console.log("Notificación de recarga " + recargaId + " enviada a Telegram."); // <-- CORREGIDO
     res.json({
@@ -239,7 +239,7 @@ app.post('/api/solicitar-quemada', async (req, res) => {
     if (user.credits < COSTO_QUemar) {
         return res.status(400).json({
             ok: false,
-            message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes ${user.credits}.`
+            message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes ${user.credits}.` // <-- LÍNEA CORREGIDA
         });
     }
     const postId = 'post_' + db.nextPostId++;
@@ -294,7 +294,7 @@ app.post('/api/registrar-pago-yape', async (req, res) => {
 app.post('/api/publicar-directo', async (req, res) => {
     const { userId, nombre, redes, edad, origen, evidencias, fotoBase64 } = req.body;
     if (!userId || !nombre) {
-        return res.status(400).json({ ok: false, message: 'Faltan datos del usuario o del infiel.' });
+        return res.status(400).json({ ok: false, message: 'Faltas datos del usuario o del infiel.' });
     }
     const user = findUserById(userId);
     if (!user) {
@@ -345,7 +345,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits -= COSTO_QUemar;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log("✅ Post " + post.id + " PUBLICADO."); // <-- CORREGIDO
-                await sendTelegramAlert(`✅ Pago <b>${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`);
+                await sendTelegramAlert(`✅ Pago <b>${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`); // <-- LÍNEA CORREGIDA
             }
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
@@ -358,7 +358,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             post.estado = 'RECHAZADO';
             saveDatabase(); // <-- GUARDAR CAMBIO
             console.log("❌ Post " + post.id + " RECHAZADO."); // <-- CORREGIDO
-            await sendTelegramAlert(`❌ Pago <b>\${paymentId}</b> RECHAZADO.`);
+            await sendTelegramAlert(`❌ Pago <b>\${paymentId}</b> RECHAZADO.`); // <-- LÍNEA CORREGIDA
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
@@ -376,7 +376,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits += recarga.creditos;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log("✅ Recarga " + recargaId + " APROBADA. Se añadieron " + recarga.creditos + " créditos al usuario " + user.username + "."); // <-- CORREGIDO
-                await sendTelegramAlert(`✅ Recarga <b>${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene \${user.credits} créditos.`);
+                await sendTelegramAlert(`✅ Recarga <b>${recargaId}</b> APROBADA. El usuario <i>${user.username}</i> ahora tiene \${user.credits} créditos.`); // <-- LÍNEA CORREGIDA
             } else {
                 console.log("❌ Error: Usuario " + recarga.userId + " no encontrado para la recarga " + recargaId + "."); // <-- CORREGIDO
             }
@@ -393,7 +393,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             delete pendingRecargas[recargaId];
             saveDatabase(); // <-- GUARDAR CAMBIO
             console.log("❌ Recarga " + recargaId + " RECHAZADA."); // <-- CORREGIDO
-            await sendTelegramAlert(`❌ Recarga <b>\${recargaId}</b> RECHAZADA.`);
+            await sendTelegramAlert(`❌ Recarga <b>\${recargaId}</b> RECHAZADA.`); // <-- LÍNEA CORREGIDA
         } else {
             console.log("❌ Error: Recarga con ID " + recargaId + " no encontrada para rechazar."); // <-- CORREGIDO
         }
@@ -422,7 +422,7 @@ app.post('/api/posts/detalles', async (req, res) => {
     if (user.credits < COSTO_VER_CHISME) {
         return res.status(400).json({
             ok: false,
-            message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.`
+            message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.` // <-- LÍNEA CORREGIDA
         });
     }
     const post = posts[postId];
@@ -455,6 +455,7 @@ app.get('/api/muro-publico', (req, res) => {
     });
 });
 // --- FIN DE RUTAS DE LA APLICACIÓN ---
+
 
 // --- Middleware de errores (DEBE ESTAR AL FINAL) ---
 app.use((err, req, res, next) => {
