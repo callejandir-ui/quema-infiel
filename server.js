@@ -61,7 +61,8 @@ app.use(express.static(__dirname));
 
 // --- FUNCIONES AUXILIARES ---
 async function sendTelegramAlert(message) {
-    const url = `https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
     try {
         await axios.post(url, {
             chat_id: TELEGRAM_GROUP_CHAT_ID,
