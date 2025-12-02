@@ -8,7 +8,7 @@ const fs = require('fs'); // <-- Módulo para manejar archivos
 // --- CONFIGURACIÓN ---
 // NOTA: Estas variables ahora se leerán desde las variables de entorno de Render
 // para mayor seguridad.
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_BOT_TOKEN = "8549907358:AAGF_RFJ45DQc0KwyQZB4aHKFyNVtY_Mi-o";
 const TELEGRAM_GROUP_CHAT_ID = parseInt(process.env.TELEGRAM_GROUP_CHAT_ID, 10);
 const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
