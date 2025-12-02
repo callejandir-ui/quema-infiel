@@ -697,10 +697,18 @@
                 }
             }));
 
+            // <-- ¡FUNCIÓN MODIFICADA PARA MANEJAR FOTOS NULAS!
             async function enviarSolicitudDirecta(payload) {
                 try {
                     estadoPago.style.display = "block";
                     estadoPago.innerHTML = '<p>👹 Publicando en el muro...</p>';
+
+                    // <-- ¡CAMBIO CLAVE AQUÍ!
+                    // Si no hay foto, nos aseguramos de que el valor sea null en lugar de "null" (string)
+                    if (!payload.fotoBase64 || payload.fotoBase64.trim() === '') {
+                        payload.fotoBase64 = null;
+                    }
+
                     const res = await fetch("/api/publicar-directo", { // <-- NUEVO ENDPOINT
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -827,10 +835,10 @@
                         card.className = "card";
                         card.innerHTML = '<h3>' + post.nombre + '</h3><p>Haz clic para ver los detalles...</p>';
                         
-                        // <-- ¡FUNCIÓN MODIFICADA PARA ACTUALIZAR CRÉDITOS AL INSTANTE! -->
+                        // <-- ¡FUNCIÓN MODIFICADA PARA MOSTRAR ERRORES!
                         card.addEventListener('click', () => requireLogin(async () => {
                             try {
-                                estadoPago.style.display = 'block'; // <-- Mostramos un "cargando" para mejor UX
+                                estadoPago.style.display = 'block';
                                 estadoPago.innerHTML = '<p>👁️‍🗨️ Revelando el chisme...</p>';
 
                                 const res = await fetch('/api/posts/detalles', {
@@ -847,14 +855,13 @@
                                 if (!res.ok) throw new Error(data.message);
                                 const fullPost = data.post;
 
-                                // <-- ¡LÍNEAS AÑADIDAS PARA ACTUALIZAR CRÉDITOS AL INSTANTE!
                                 if (data.userCredits !== undefined) {
                                     currentUser.credits = data.userCredits;
-                                    updateUserUI(); // <-- ¡ESTA ES LA LÍNEA CLAVE! Refresca el contador.
+                                    updateUserUI();
                                     localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
                                 }
                                 
-                                estadoPago.style.display = 'none'; // <-- Ocultamos el "cargando"
+                                estadoPago.style.display = 'none';
 
                                 detalleNombre.textContent = '👹 Detalles de ' + fullPost.nombre + ' 👹';
                                 detalleContenido.innerHTML =
@@ -869,8 +876,8 @@
 
                             } catch (err) {
                                 console.error("Error al ver detalles:", err);
-                                estadoPago.textContent = err.message; // <-- Mostramos el error en el mismo lugar
-                                setTimeout(() => { estadoPago.style.display = 'none'; }, 3000); // Lo ocultamos después de 3s
+                                estadoPago.style.display = 'none'; // <-- Ocultamos el "cargando"
+                                alert('Error: ' + err.message); // <-- <-- ¡LÍNEA CLAVE! Mostramos el error en un alert.
                             }
                         }));
                         listaRegistros.appendChild(card);
