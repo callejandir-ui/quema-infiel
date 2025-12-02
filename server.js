@@ -8,8 +8,7 @@ const fs = require('fs'); // <-- Módulo para manejar archivos
 // --- CONFIGURACIÓN ---
 // NOTA: Estas variables ahora se leerán desde las variables de entorno de Render
 // para mayor seguridad.
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8549907358:AAGF_RFJ45DQc0KwyQZB4aHKFyNVtY_Mi-o';
-// Aseguramos que el chat_id sea un número, no un string
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8549907358:AAGF_RFJ45DQc0KwyQZB4aHKFyNVtY_Mi-o'; // Aseguramos que el chat_id sea un número, no un string
 const TELEGRAM_GROUP_CHAT_ID = Number(process.env.TELEGRAM_GROUP_CHAT_ID);
 const COSTO_QUemar = 10; // Créditos para publicar a un infiel
 const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
@@ -53,7 +52,9 @@ let pendingRecargas = db.pendingRecargas;
 
 // INICIO DE LA APLICACIÓN EXPRESS (DEBE ESTAR DESPUÉS DE CARGAR LAS VARIABLES Y LA DB)
 const app = express();
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+    limit: '10mb'
+}));
 app.use(express.static(__dirname));
 // FIN DEL INICIO DE EXPRESS
 
@@ -80,77 +81,217 @@ function findUserById(userId) {
 // --- RUTAS DE AUTENTICACIÓN ---
 app.post('/api/auth/register', async (req, res) => {
     console.log(">>> PETICIÓN RECIBIDA EN /api/auth/register");
-    const { username, password } = req.body;
+    const {
+        username,
+        password
+    } = req.body;
     if (!username || !password) {
-        return res.status(400).json({ ok: false, message: 'Usuario y contraseña son obligatorios.' });
+        return res.status(400).json({
+            ok: false,
+            message: 'Usuario y contraseña son obligatorios.'
+        });
     }
     if (Object.values(users).find(u => u.username === username)) {
-        return res.status(409).json({ ok: false, message: 'Ese nombre de usuario ya está en uso.' });
+        return res.status(409).json({
+            ok: false,
+            message: 'Ese nombre de usuario ya está en uso.'
+        });
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = 'user_' + db.nextUserId++;
-    users[userId] = { id: userId, username, passwordHash, credits: 0 };
+    users[userId] = {
+        id: userId,
+        username,
+        passwordHash,
+        credits: 0
+    };
     saveDatabase(); // <-- GUARDAR CAMBIO
     console.log("Usuario '" + username + "' registrado con ID " + userId + "."); // <-- CORREGIDO
-    res.json({ ok: true, message: 'Usuario creado con éxito.' });
+    res.json({
+        ok: true,
+        message: 'Usuario creado con éxito.'
+    });
 });
 
 app.post('/api/auth/login', async (req, res) => {
     console.log(">>> PETICIÓN RECIBIDA EN /api/auth/login");
-    const { username, password } = req.body;
+    const {
+        username,
+        password
+    } = req.body;
     const user = Object.values(users).find(u => u.username === username);
     if (!user) {
         console.log("Login fallido: usuario no encontrado");
-        return res.status(401).json({ ok: false, message: 'Usuario o contraseña incorrectos.' });
+        return res.status(401).json({
+            ok: false,
+            message: 'Usuario o contraseña incorrectos.'
+        });
     }
     const isValid = await bcrypt.compare(password, String(user.passwordHash));
     if (!isValid) {
         console.log("Login fallido: contraseña incorrecta");
-        return res.status(401).json({ ok: false, message: 'Usuario o contraseña incorrectos.' });
+        return res.status(401).json({
+            ok: false,
+            message: 'Usuario o contraseña incorrectos.'
+        });
     }
     console.log("Usuario '" + user.username + "' inició sesión."); // <-- CORREGIDO
-    res.json({ ok: true, message: 'Inicio de sesión exitoso.', user: { id: user.id, username: user.username, credits: user.credits } });
+    res.json({
+        ok: true,
+        message: 'Inicio de sesión exitoso.',
+        user: {
+            id: user.id,
+            username: user.username,
+            credits: user.credits
+        }
+    });
 });
 // --- FIN DE RUTAS DE AUTENTICACIÓN ---
 
 // --- NUEVAS RUTAS DE RECARGA ---
 app.post('/api/solicitar-recarga', async (req, res) => {
-    const { userId, creditos } = req.body;
+    const {
+        userId,
+        creditos
+    } = req.body;
     if (!userId || !creditos || creditos <= 0) {
-        return res.status(400).json({ ok: false, message: 'Datos de recarga inválidos.' });
+        return res.status(400).json({
+            ok: false,
+            message: 'Datos de recarga inválidos.'
+        });
     }
     const user = findUserById(userId);
     if (!user) {
-        return res.status(404).json({ ok: false, message: 'Usuario no encontrado.' });
+        return res.status(404).json({
+            ok: false,
+            message: 'Usuario no encontrado.'
+        });
     }
     const monto = creditos * 1.0; // 1 sol por crédito
     const recargaId = 'rec_' + db.nextRecargaId++;
-    pendingRecargas[recargaId] = { userId, creditos, monto };
+    pendingRecargas[recargaId] = {
+        userId,
+        creditos,
+        monto
+    };
     saveDatabase(); // <-- GUARDAR CAMBIO
     console.log("Solicitud de recarga para " + creditos + " créditos (S/ " + monto + ") por usuario " + user.username + " (Recarga ID: " + recargaId + ")."); // <-- CORREGIDO
-    res.json({ ok: true, message: 'Solicitud de recarga generada.', recargaId, monto });
+    res.json({
+        ok: true,
+        message: 'Solicitud de recarga generada.',
+        recargaId,
+        monto
+    });
 });
 
 app.post('/api/registrar-pago-recarga', async (req, res) => {
-    const { recargaId } = req.body;
+    const {
+        recargaId
+    } = req.body;
     const recarga = pendingRecargas[recargaId];
     if (!recarga) {
-        return res.status(400).json({ ok: false, message: 'Solicitud de recarga no encontrada.' });
+        return res.status(400).json({
+            ok: false,
+            message: 'Solicitud de recarga no encontrada.'
+        });
     }
     const user = findUserById(recarga.userId);
     if (!user) {
-        return res.status(404).json({ ok: false, message: 'Usuario asociado a la recarga no encontrado.' });
+        return res.status(404).json({
+            ok: false,
+            message: 'Usuario asociado a la recarga no encontrado.'
+        });
     }
     const mensaje = `💰 <b>NUEVA SOLICITUD DE RECARGA</b> 💰\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Créditos a añadir:</b> <b>${recarga.creditos}</b>\n<b>Monto pagado:</b> S/ ${recarga.monto}\n<b>ID de la Recarga:</b> <code>${recargaId}</code>\n\n<b>¿APROBAR RECARGA?</b> /approve_recarga_${recargaId}\n\n<b>¿RECHAZAR?</b> /reject_recarga_\${recargaId}`;
     await sendTelegramAlert(mensaje);
     console.log("Notificación de recarga " + recargaId + " enviada a Telegram."); // <-- CORREGIDO
-    res.json({ ok: true, message: 'Pago de recarga registrado. El administrador ha sido notificado.' });
+    res.json({
+        ok: true,
+        message: 'Pago de recarga registrado. El administrador ha sido notificado.'
+    });
 });
 // --- FIN DE RUTAS DE RECARGA ---
 
-
 // --- RUTAS DE LA APLICACIÓN ---
 app.post('/api/solicitar-quemada', async (req, res) => {
+    const {
+        userId,
+        nombre,
+        redes,
+        edad,
+        origen,
+        evidencias,
+        fotoBase64
+    } = req.body;
+    if (!userId || !nombre) {
+        return res.status(400).json({
+            ok: false,
+            message: 'Faltan datos del usuario o del infiel.'
+        });
+    }
+    const user = findUserById(userId);
+    if (!user) {
+        return res.status(404).json({
+            ok: false,
+            message: 'Usuario no encontrado.'
+        });
+    }
+    if (user.credits < COSTO_QUemar) {
+        return res.status(400).json({
+            ok: false,
+            message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} y tienes ${user.credits}.`
+        });
+    }
+    const postId = 'post_' + db.nextPostId++;
+    posts[postId] = {
+        id: postId,
+        userId,
+        nombre,
+        redes,
+        edad,
+        origen,
+        evidencias,
+        fotoBase64,
+        fechaCreacion: new Date().toISOString(),
+        estado: 'PENDIENTE_VALIDACION'
+    };
+    saveDatabase(); // <-- GUARDAR CAMBIO
+    console.log("Solicitud de quemada para '" + nombre + "' recibida (Post ID: " + postId + ")."); // <-- CORREGIDO
+    res.json({
+        ok: true,
+        message: 'Solicitud recibida. Ahora realiza el pago y espera la validación.',
+        postId
+    });
+});
+
+app.post('/api/registrar-pago-yape', async (req, res) => {
+    const {
+        postId,
+        monto
+    } = req.body;
+    const post = posts[postId];
+    if (!post || post.estado !== 'PENDIENTE_VALIDACION') {
+        return res.status(400).json({
+            ok: false,
+            message: 'Solicitud no encontrada o ya procesada.'
+        });
+    }
+    const paymentId = 'pay_' + Date.now() + '_' + postId;
+    pendingPayments[paymentId] = {
+        postId,
+        monto
+    };
+    saveDatabase(); // <-- GUARDAR CAMBIO
+    const mensaje = `🔥 <b>NUEVO PAGO YAPE RECIBIDO</b> 🔥\n\n<b>Nombre del Infiel:</b> <i>${post.nombre}</i>\n<b>Monto:</b> S/ ${monto}\n<b>ID de la Solicitud:</b> <code>${postId}</code>\n\n<b>¿APROBAR?</b> /approve_${paymentId}\n\n<b>¿RECHAZAR?</b> /reject_${paymentId}`;
+    await sendTelegramAlert(mensaje);
+    res.json({
+        ok: true,
+        message: 'Pago registrado. El administrador ha sido notificado.'
+    });
+});
+
+// <-- ¡NUEVA RUTA AÑADIDA AQUÍ! -->
+app.post('/api/publicar-directo', async (req, res) => {
     const { userId, nombre, redes, edad, origen, evidencias, fotoBase64 } = req.body;
     if (!userId || !nombre) {
         return res.status(400).json({ ok: false, message: 'Faltan datos del usuario o del infiel.' });
@@ -160,45 +301,39 @@ app.post('/api/solicitar-quemada', async (req, res) => {
         return res.status(404).json({ ok: false, message: 'Usuario no encontrado.' });
     }
 
-    // <-- LÓGICA CAMBIADA: Ahora solo verifica créditos, no los descuenta aquí
+    // Verificación de seguridad en el servidor
     if (user.credits < COSTO_QUemar) {
-        return res.status(400).json({ ok: false, message: `Créditos insuficientes. Necesitas \${COSTO_QUemar} créditos.` });
+        return res.status(400).json({ ok: false, message: 'Fraude detectado. Créditos insuficientes.' });
     }
+
+    // Descontamos créditos en el servidor también
+    user.credits -= COSTO_QUemar;
 
     const postId = 'post_' + db.nextPostId++;
-    posts[postId] = { id: postId, userId, nombre, redes, edad, origen, evidencias, fotoBase64, fechaCreacion: new Date().toISOString(), estado: 'PENDIENTE_VALIDACION' };
-    saveDatabase(); // <-- GUARDAR CAMBIO
-    console.log("Solicitud de quemada para '" + nombre + "' recibida (Post ID: " + postId + ")."); // <-- CORREGIDO
+    posts[postId] = {
+        id: postId, userId, nombre, redes, edad, origen, evidencias, fotoBase64,
+        fechaCreacion: new Date().toISOString(),
+        estado: 'PUBLICADO', // <-- SE PUBLICA DIRECTAMENTE
+        fechaPago: new Date().toISOString() // <-- La fecha de "pago" es ahora
+    };
+    saveDatabase();
+    console.log("✅ Post '" + nombre + "' PUBLICADO DIRECTAMENTE por " + user.username + ".");
 
-    // <-- CAMBIO CLAVE: Enviamos una alerta DIRECTA al admin, sin esperar un pago de Yape.
-    const mensaje = `🔥 <b>NUEVA SOLICITUD DE QUEMADA</b> 🔥\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Nombre del Infiel:</b> <i>${nombre}</i>\n\n<b>¿APROBAR PUBLICACIÓN?</b> /approve_directo_${postId}\n\n<b>¿RECHAZAR?</b> /reject_directo_${postId}`;
+    // Notificamos al admin de todas formas, para que esté al tanto
+    const mensaje = `✅ <b>NUEVO POST PUBLICADO DIRECTAMENTE</b> ✅\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Nombre del Infiel:</b> <i>${nombre}</i>\n<b>ID del Post:</b> <code>${postId}</code>\n\nCréditos descontados.`;
     await sendTelegramAlert(mensaje);
 
-    res.json({ ok: true, message: 'Solicitud recibida. Espera la validación del administrador.', postId });
+    res.json({ ok: true, message: 'Post publicado exitosamente.' });
 });
-
-// Esta ruta ahora es obsoleta para el flujo principal, pero la dejamos por si acaso
-app.post('/api/registrar-pago-yape', async (req, res) => {
-    const { postId, monto } = req.body;
-    const post = posts[postId];
-    if (!post || post.estado !== 'PENDIENTE_VALIDACION') {
-        return res.status(400).json({ ok: false, message: 'Solicitud no encontrada o ya procesada.' });
-    }
-    const paymentId = 'pay_' + Date.now() + '_' + postId;
-    pendingPayments[paymentId] = { postId, monto };
-    saveDatabase(); // <-- GUARDAR CAMBIO
-    const mensaje = `🔥 <b>NUEVO PAGO YAPE RECIBIDO</b> 🔥\n\n<b>Nombre del Infiel:</b> <i>${post.nombre}</i>\n<b>Monto:</b> S/ ${monto}\n<b>ID de la Solicitud:</b> <code>${postId}</code>\n\n<b>¿APROBAR?</b> /approve_${paymentId}\n\n<b>¿RECHAZAR?</b> /reject_\${paymentId}`;
-    await sendTelegramAlert(mensaje);
-    res.json({ ok: true, message: 'Pago registrado. El administrador ha sido notificado.' });
-});
+// <-- ¡FIN DE LA ADICIÓN! -->
 
 app.post('/api/telegram-webhook', async (req, res) => {
     const message = req.body.message;
     if (!message || !message.text || message.chat.id != TELEGRAM_GROUP_CHAT_ID) return res.sendStatus(200);
     const text = message.text;
 
-    // --- Lógica para aprobar/rechazar posts (FLUJO ANTIGUO CON PAGO YAPE) ---
-    if (text.startsWith('/approve_') && !text.includes('recarga') && !text.includes('directo')) {
+    // --- Lógica para aprobar/rechazar posts ---
+    if (text.startsWith('/approve_') && !text.includes('recarga')) {
         const paymentId = text.split('_')[1];
         const payment = pendingPayments[paymentId];
         if (payment) {
@@ -210,12 +345,12 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 user.credits -= COSTO_QUemar;
                 saveDatabase(); // <-- GUARDAR CAMBIO
                 console.log("✅ Post " + post.id + " PUBLICADO."); // <-- CORREGIDO
-                await sendTelegramAlert(`✅ Pago <b>\${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`);
+                await sendTelegramAlert(`✅ Pago <b>${paymentId}</b> APROBADO. Post de <i>\${post.nombre}</i> publicado.`);
             }
             delete pendingPayments[paymentId];
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
-    } else if (text.startsWith('/reject_') && !text.includes('recarga') && !text.includes('directo')) {
+    } else if (text.startsWith('/reject_') && !text.includes('recarga')) {
         const paymentId = text.split('_')[1];
         if (pendingPayments[paymentId]) {
             const payment = pendingPayments[paymentId];
@@ -228,10 +363,11 @@ app.post('/api/telegram-webhook', async (req, res) => {
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
     }
-    // --- Lógica para aprobar/rechazar recargas ---
+
+    // --- Lógica para aprobar/rechazar recargas (VERSIÓN 100% CORREGIDA) ---
     else if (text.startsWith('/approve_recarga_')) {
-        let recargaId = text.replace('/approve_recarga_', '');
-        recargaId = recargaId.split('@')[0]; 
+        let recargaId = text.replace('/approve_recarga_', ''); // <-- ¡LÍNEA MÁGICA! Esto limpia el comando si Telegram le añade @...
+        recargaId = recargaId.split('@')[0];
         console.log(">>> Comando de aprobación recibido. Intentando aprobar recarga con ID: " + recargaId); // <-- CORREGIDO
         const recarga = pendingRecargas[recargaId];
         if (recarga) {
@@ -250,7 +386,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             console.log("❌ Error: Recarga con ID " + recargaId + " no encontrada."); // <-- CORREGIDO
         }
     } else if (text.startsWith('/reject_recarga_')) {
-        let recargaId = text.replace('/reject_recarga_', '');
+        let recargaId = text.replace('/reject_recarga_', ''); // <-- ¡LÍNEA MÁGICA! Esto limpia el comando si Telegram le añade @...
         recargaId = recargaId.split('@')[0];
         console.log(">>> Comando de rechazo recibido. Intentando rechazar recarga con ID: " + recargaId); // <-- CORREGIDO
         if (pendingRecargas[recargaId]) {
@@ -262,72 +398,71 @@ app.post('/api/telegram-webhook', async (req, res) => {
             console.log("❌ Error: Recarga con ID " + recargaId + " no encontrada para rechazar."); // <-- CORREGIDO
         }
     }
-    // --- NUEVA LÓGICA PARA APROBAR/RECHAZAR DIRECTAMENTE (sin pago Yape) ---
-    else if (text.startsWith('/approve_directo_')) {
-        const postId = text.split('_')[2]; // Extrae el ID del post
-        const post = posts[postId];
-        if (post && post.estado === 'PENDIENTE_VALIDACION') {
-            const user = findUserById(post.userId);
-            if (user) {
-                // <-- ¡AQUÍ ES DONDE SE DESCUENTAN LOS CRÉDITOS!
-                user.credits -= COSTO_QUemar;
-                post.estado = 'PUBLICADO';
-                post.fechaPago = new Date().toISOString();
-                saveDatabase();
-                console.log("✅ Post " + post.id + " PUBLICADO DIRECTAMENTE. Créditos descontados.");
-                await sendTelegramAlert(`✅ Solicitud <b>${postId}</b> APROBADA. Post de <i>${post.nombre}</i> publicado y créditos descontados.`);
-            }
-        }
-    } else if (text.startsWith('/reject_directo_')) {
-        const postId = text.split('_')[2]; // Extrae el ID del post
-        const post = posts[postId];
-        if (post && post.estado === 'PENDIENTE_VALIDACION') {
-            post.estado = 'RECHAZADO';
-            saveDatabase();
-            console.log("❌ Post " + post.id + " RECHAZADO.");
-            await sendTelegramAlert(`❌ Solicitud <b>\${postId}</b> RECHAZADA.`);
-        }
-    }
-
     res.sendStatus(200);
 });
 
 app.post('/api/posts/detalles', async (req, res) => {
-    const { postId, userId } = req.body;
+    const {
+        postId,
+        userId
+    } = req.body;
     if (!postId || !userId) {
-        return res.status(400).json({ ok: false, message: 'Faltan datos.' });
+        return res.status(400).json({
+            ok: false,
+            message: 'Faltan datos.'
+        });
     }
     const user = findUserById(userId);
     if (!user) {
-        return res.status(404).json({ ok: false, message: 'Usuario no encontrado.' });
+        return res.status(404).json({
+            ok: false,
+            message: 'Usuario no encontrado.'
+        });
     }
     if (user.credits < COSTO_VER_CHISME) {
-        return res.status(400).json({ ok: false, message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.` });
+        return res.status(400).json({
+            ok: false,
+            message: `Créditos insuficientes. Necesitas \${COSTO_VER_CHISME} para ver el chisme.`
+        });
     }
     const post = posts[postId];
     if (!post || post.estado !== 'PUBLICADO') {
-        return res.status(404).json({ ok: false, message: 'Confesión no encontrada.' });
+        return res.status(404).json({
+            ok: false,
+            message: 'Confesión no encontrada.'
+        });
     }
     user.credits -= COSTO_VER_CHISME;
     saveDatabase(); // <-- GUARDAR CAMBIO
     console.log("Usuario " + user.username + " gastó " + COSTO_VER_CHISME + " créditos para ver el post " + postId + "."); // <-- CORREGIDO
-    res.json({ ok: true, post: post });
+    res.json({
+        ok: true,
+        post: post
+    });
 });
 
 app.get('/api/muro-publico', (req, res) => {
     const publicPosts = Object.values(posts)
         .filter(p => p.estado === 'PUBLICADO')
         .sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
-        .map(p => ({ id: p.id, nombre: p.nombre }));
-    res.json({ ok: true, posts: publicPosts });
+        .map(p => ({
+            id: p.id,
+            nombre: p.nombre
+        }));
+    res.json({
+        ok: true,
+        posts: publicPosts
+    });
 });
 // --- FIN DE RUTAS DE LA APLICACIÓN ---
-
 
 // --- Middleware de errores (DEBE ESTAR AL FINAL) ---
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ ok: false, message: 'Error interno del servidor.' });
+    res.status(500).json({
+        ok: false,
+        message: 'Error interno del servidor.'
+    });
 });
 
 // --- CÓDIGO DE PRUEBA (solo se ejecuta si no hay posts) ---

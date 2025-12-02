@@ -446,7 +446,7 @@
             <input id="inputFotos" type="file" accept="image/*">
             <div class="modal-buttons">
                 <button id="btnCerrar" class="btn-close">Me arrepentí</button>
-                <button id="btnGuardar" class="btn-primary">Solicitar Publicación</button>
+                <button id="btnGuardar" class="btn-primary">Publicar</button> <!-- Cambiado el texto del botón -->
             </div>
             <div id="estadoPago" class="estado-mensaje"></div>
         </div>
@@ -640,28 +640,41 @@
             });
 
             // --- LÓGICA DE LA APLICACIÓN ---
-function requireLogin(callback) {
-    if (!currentUser) {
-        alert('Debes iniciar sesión para realizar esta acción.');
-        modalAuth.style.display = 'flex';
-        return;
-    }
-    // Verificar créditos para VER DETALLES aquí es redundante, el servidor ya lo hace.
-    // El error venía de otro lugar, pero esta es la forma segura de mostrar mensajes.
-    callback();
-}
+            function requireLogin(callback) {
+                if (!currentUser) {
+                    alert('Debes iniciar sesión para realizar esta acción.');
+                    modalAuth.style.display = 'flex';
+                    return;
+                }
+                callback();
+            }
 
             btnQuemar.addEventListener('click', () => requireLogin(() => modalQuemar.style.display = 'flex'));
             btnCerrar.addEventListener('click', () => modalQuemar.style.display = 'none');
             btnCerrarPago.addEventListener('click', () => modalPago.style.display = 'none');
             btnCerrarDetalle.addEventListener('click', () => modalDetalle.style.display = 'none');
 
+            // <-- NUEVA LÓGICA: Publicar y descontar al instante
             btnGuardar.addEventListener('click', () => requireLogin(async () => {
                 const nombre = inputNombre.value.trim();
                 if (!nombre) {
                     alert("¡El nombre del culpable es obligatorio! 😈");
                     return;
                 }
+
+                // Verificar y descontar créditos EN EL CLIENTE
+                if (currentUser.credits < 10) {
+                    alert('Créditos insuficientes. Necesitas 10 créditos para registrar a un infiel. ¡Recarga tu poder!');
+                    modalQuemar.style.display = 'none';
+                    modalRecargar.style.display = 'flex';
+                    return;
+                }
+
+                // Si llega aquí, es porque tiene créditos. Descontamos aquí mismo.
+                currentUser.credits -= 10;
+                updateUserUI(); // Actualizamos la UI inmediatamente
+                localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser)); // Guardamos el cambio localmente
+
                 const payload = {
                     userId: currentUser.id,
                     nombre,
@@ -675,67 +688,43 @@ function requireLogin(callback) {
                     const reader = new FileReader();
                     reader.onload = ev => {
                         payload.fotoBase64 = ev.target.result;
-                        enviarSolicitud(payload);
+                        enviarSolicitudDirecta(payload);
                     };
                     reader.readAsDataURL(file);
                 } else {
                     payload.fotoBase64 = null;
-                    enviarSolicitud(payload);
+                    enviarSolicitudDirecta(payload);
                 }
             }));
 
-            async function enviarSolicitud(payload) {
+            async function enviarSolicitudDirecta(payload) {
                 try {
                     estadoPago.style.display = "block";
-                    estadoPago.innerHTML = '<p>👹 Enviando solicitud...</p>';
-                    const res = await fetch("/api/solicitar-quemada", {
+                    estadoPago.innerHTML = '<p>👹 Publicando en el muro...</p>';
+                    const res = await fetch("/api/publicar-directo", { // <-- NUEVO ENDPOINT
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload)
                     });
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.message);
-                    postIdActual = data.postId;
-                    modalQuemar.style.display = "none";
-                    modalPago.style.display = "flex";
-                    estadoPagoYape.innerHTML = '<p>Solicitud registrada. Realiza el pago y presiona "Ya realicé el pago".</p>';
+
+                    // Éxito
+                    alert('¡El infiel ha sido publicado exitosamente en el muro!');
+                    modalQuemar.style.display = 'none';
+                    location.reload(); // Recargamos para ver el nuevo post en el muro
+
                 } catch (err) {
-                    console.error("Error en solicitud:", err);
-                    estadoPago.textContent = err.message;
+                    console.error("Error en publicación directa:", err);
+                    estadoPago.textContent = 'Error al publicar. Inténtalo de nuevo.';
+                    // Si falla, devolvemos los créditos
+                    currentUser.credits += 10;
+                    updateUserUI();
+                    localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
                 }
             }
 
-            btnYaPague.addEventListener('click', async () => {
-                if (!postIdActual) return;
-                try {
-                    estadoPagoYape.innerHTML = '<p>👹 Notificando pago...</p>';
-                    btnYaPague.disabled = true;
-                    const res = await fetch("/api/registrar-pago-yape", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            postId: postIdActual,
-                            monto: 10
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.message);
-                    estadoPagoYape.innerHTML = '<p>' + data.message + '</p><p>Espera la confirmación...</p>';
-                    setTimeout(() => {
-                        modalPago.style.display = 'none';
-                        location.reload();
-                    }, 5000);
-                } catch (err) {
-                    console.error("Error al registrar pago:", err);
-                    estadoPagoYape.textContent = err.message;
-                } finally {
-                    btnYaPague.disabled = false;
-                }
-            });
+            btnYaPague.addEventListener('click', async () => { /* Esta función ahora es obsoleta para el flujo principal, pero la dejamos por si acaso */ });
 
             // --- LÓGICA DE RECARGA ---
             function resetModalRecarga() {
@@ -846,9 +835,9 @@ function requireLogin(callback) {
                                 if (!res.ok) throw new Error(data.message);
                                 const fullPost = data.post;
                                 detalleNombre.textContent = '👹 Detalles de ' + fullPost.nombre + ' 👹';
-                                
+
                                 // <-- ¡LÍNEA CORREGIDA! Se usa concatenación simple para evitar errores.
-                                detalleContenido.innerHTML = 
+                                detalleContenido.innerHTML =
                                     '<p><strong>Redes:</strong> ' + fullPost.redes + '</p>' +
                                     '<p><strong>Edad:</strong> ' + fullPost.edad + '</p>' +
                                     '<p><strong>Origen:</strong> ' + fullPost.origen + '</p>' +
