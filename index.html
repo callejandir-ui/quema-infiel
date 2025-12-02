@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>👹 Lista de Infieles Del Peru</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #1a0000; color: #f0e6d2; min-height: 100vh; font-family: 'Rubik', sans-serif; display: flex; flex-direction: column; background-image: repeating-linear-gradient(rgba(255, 0, 0, 0.03) 0px, transparent 1px, transparent 2px, rgba(255, 0, 0, 0.03) 3px), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="100" fill="rgba(255,0,0,0.05)">👹</text></svg>'); }
+        header { background: linear-gradient(135deg, #8B0000, #4B0000); padding: 1rem 1.25rem; color: #ffcccc; text-align: center; border-bottom: 3px solid #ff4d4d; position: relative; overflow: hidden; }
+        header::before { content: '👹 👹 👹'; position: absolute; top: -5px; left: 0; width: 100%; font-size: 2rem; opacity: 0.2; animation: float 20s infinite linear; }
+        @keyframes float { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+        h1 { font-family: 'Nosifer', cursive; font-size: 3.5rem; text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; animation: flicker 1.5s infinite alternate; }
+        @keyframes flicker { 0%, 100% { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; } 50% { text-shadow: 0 0 20px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000; } }
+        .subtitle { font-family: 'Creepster', cursive; font-size: 1.5rem; color: #ff9999; margin-top: 0.5rem; }
+        .user-info { position: absolute; top: 10px; right: 20px; font-size: 1rem; color: #ffdc00; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .user-info button { padding: 5px 10px; background: #8B0000; color: white; border: 1px solid #ff4d4d; border-radius: 5px; cursor: pointer; font-family: 'Rubik'; }
+        .user-info button:hover { background: #a00000; }
+        .container { width: 100%; max-width: 1120px; margin: 0 auto; padding: 1rem; }
+        main { flex: 1; padding: 2rem 1.25rem; }
+        .main-button-container { text-align: center; margin: 2rem 0; }
+        #btnQuemar { padding: 15px 40px; background: linear-gradient(45deg, #ff3333, #cc0000); border: 2px solid #ff4d4d; border-radius: 12px; cursor: pointer; color: white; font-size: 1.4rem; font-weight: bold; font-family: 'Nosifer', cursive; text-shadow: 1px 1px 2px #000; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4); position: relative; overflow: hidden; }
+        #btnQuemar::before { content: '🔥'; position: absolute; top: -20px; left: -20px; font-size: 2rem; opacity: 0; transition: all 0.5s; }
+        #btnQuemar:hover::before { top: 5px; left: 5px; opacity: 1; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #btnQuemar:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 0, 0, 0.6); }
+        h2 { text-align: center; margin-top: 3rem; color: #ffcccc; font-size: 2rem; font-family: 'Creepster', cursive; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .card { background: linear-gradient(145deg, #2a0f0f, #1a0505); border-radius: 15px; padding: 1.5rem; border: 1px solid #660000; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 0, 0, 0.2); transition: all 0.3s ease; position: relative; cursor: pointer; }
+        .card::before { content: '👁️‍🗨️'; position: absolute; top: 10px; right: 15px; font-size: 1.5rem; opacity: 0.3; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(255, 0, 0, 0.4), inset 0 0 15px rgba(255, 0, 0, 0.3); }
+        .card h3 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #ff9999; font-family: 'Nosifer', cursive; text-align: center; }
+        .card p { line-height: 1.6; color: #e0e0e0; text-align: center; font-style: italic; }
+        .card-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px; margin-top: 1rem; border: 2px solid #4B0000; }
+        footer { font-size: 0.9rem; color: #990000; padding: 1.5rem; background: #0a0000; text-align: center; border-top: 2px solid #4B0000; font-family: 'Creepster', cursive; }
+        /* Modales */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 10000; }
+        .modal-content { background: linear-gradient(145deg, #2a0f0f, #1a0505); padding: 2rem; border-radius: 15px; width: 90%; max-width: 500px; color: #f0e6d2; border: 2px solid #ff4d4d; box-shadow: 0 0 30px rgba(255, 0, 0, 0.5); text-align: center; }
+        .modal-content h2 { font-family: 'Nosifer', cursive; color: #ffcccc; margin-bottom: 1.5rem; text-align: center; }
+        .modal-content label { display: block; margin-top: 1rem; margin-bottom: 0.5rem; color: #ff9999; font-weight: bold; text-align: left; }
+        .modal-content input, .modal-content textarea { width: 100%; padding: 10px; background: #1a0505; border: 1px solid #660000; border-radius: 8px; color: #f0e6d2; font-family: 'Rubik', sans-serif; }
+        .modal-content input:focus, .modal-content textarea:focus { outline: none; border-color: #ff4d4d; box-shadow: 0 0 5px #ff4d4d; }
+        .modal-buttons { display: flex; justify-content: space-between; margin-top: 1.5rem; }
+        .modal-buttons button { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: 'Rubik', sans-serif; transition: all 0.3s ease; }
+        .btn-close { background: #4a4a4a; color: white; }
+        .btn-close:hover { background: #5a5a5a; }
+        .btn-primary { background: #8B0000; color: white; }
+        .btn-primary:hover { background: #a00000; transform: scale(1.05); }
+        
+        /* --- CAMBIO CLAVE AQUÍ --- */
+        #qr-code img, #qr-code-recarga img {
+            max-width: 140px;      /* Tamaño de la imagen más pequeño */
+            height: auto;           /* Mantiene la proporción */
+            margin: 10px 0;         /* Margen superior e inferior reducido */
+            border: none;           /* <-- BORDE BLANCO ELIMINADO */
+            border-radius: 10px;    /* Bordes redondeados de la imagen */
+        }
+        /* --- FIN DEL CAMBIO --- */
+        
+        .estado-mensaje { margin-top: 15px; text-align: center; font-size: 0.9rem; color: #ffcccc; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; }
+        .detalle-post-content { text-align: left; }
+        .detalle-post-content h3 { font-family: 'Nosifer', color: #ff9999; font-size: 2rem; margin-bottom: 1rem; text-align: center; }
+        .detalle-post-content p { margin-bottom: 1rem; }
+        .detalle-post-content strong { color: #ffdc00; }
+        .detalle-post-content img { max-width: 100%; border-radius: 10px; margin-top: 1rem; border: 2px solid #4B0000; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>👹 Lista de Infieles Del Peru 👹</h1>
+        <p class="subtitle">La lista oficial del diablo. ¿Quién será el siguiente?</p>
+        <div id="userControls" class="user-info">
+            <button id="btnLogin">Iniciar Sesión</button>
+            <button id="btnRegister">Registrarse</button>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <div class="main-button-container">
+                <button id="btnQuemar">REGISTRAR A UN INFIEL</button>
+            </div>
+            <h2>📜 Muro de la Vergüenza Pública 📜</h2>
+            <div id="listaRegistros" class="grid"></div>
+        </div>
+    </main>
+
+    <!-- Modal de Login/Register -->
+    <div id="modalAuth" class="modal">
+        <div class="modal-content">
+            <h2 id="authTitle">Iniciar Sesión</h2>
+            <label>Usuario:</label>
+            <input id="authUsername" type="text" placeholder="Tu nombre de usuario">
+            <label>Contraseña:</label>
+            <input id="authPassword" type="password" placeholder="Tu contraseña">
+            <div class="modal-buttons">
+                <button id="btnCerrarAuth" class="btn-close">Cerrar</button>
+                <button id="btnEnviarAuth" class="btn-primary">Entrar</button>
+            </div>
+            <div id="estadoAuth" class="estado-mensaje"></div>
+        </div>
+    </div>
+
+    <!-- Modal para REGISTRAR infiel -->
+    <div id="modalQuemar" class="modal">
+        <div class="modal-content">
+            <h2>👹 Añade al Infiel 👹</h2>
+            <label>Nombre del Culpable:</label>
+            <input id="inputNombre" type="text" placeholder="Ej: 'El cacherito loco'">
+            <label>Redes Sociales:</label>
+            <input id="inputRedes" type="text" placeholder="@su_insta_">
+            <label>Edad:</label>
+            <input id="inputEdad" type="number" placeholder="¿Edad del infiel?">
+            <label>Origen:</label>
+            <input id="inputOrigen" type="text" placeholder="¿De donde es?">
+            <label>Evidencias:</label>
+            <textarea id="inputEvidencias" placeholder="Descripción de la traición..."></textarea>
+            <label>Foto (La prueba definitiva):</label>
+            <input id="inputFotos" type="file" accept="image/*">
+            <div class="modal-buttons">
+                <button id="btnCerrar" class="btn-close">Me arrepentí</button>
+                <button id="btnGuardar" class="btn-primary">Solicitar Publicación</button>
+            </div>
+            <div id="estadoPago" class="estado-mensaje"></div>
+        </div>
+    </div>
+
+    <!-- Modal para PAGO con Yape (Quemar) -->
+    <div id="modalPago" class="modal">
+        <div class="modal-content">
+            <h2>🔥 Paga con Yape 🔥</h2>
+            <p>Escanea el código QR para completar el sacrificio.</p>
+            <div id="qr-code">
+                <img src="https://i.imgur.com/HPnIqui.png" alt="QR de Yape">
+            </div>
+            <p><strong>Monto a pagar:</strong> S/ 10.00</p>
+            <p>Una vez hecho el pago, haz clic en el botón de abajo.</p>
+            <div class="modal-buttons">
+                <button id="btnCerrarPago" class="btn-close">Cancelar</button>
+                <button id="btnYaPague" class="btn-primary">Ya realicé el pago</button>
+            </div>
+            <div id="estadoPagoYape" class="estado-mensaje"></div>
+        </div>
+    </div>
+
+    <!-- Modal para VER DETALLES -->
+    <div id="modalDetalle" class="modal">
+        <div class="modal-content">
+            <h2 id="detalleNombre">👹 Detalles del Condenado 👹</h2>
+            <div id="detalleContenido" class="detalle-post-content">
+                <!-- Los detalles se cargarán aquí -->
+            </div>
+            <div class="modal-buttons">
+                <button id="btnCerrarDetalle" class="btn-close">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para RECARGAR CRÉDITOS -->
+    <div id="modalRecargar" class="modal">
+        <div class="modal-content">
+            <h2>💰 Recargar Créditos 💰</h2>
+            <p>¡Obtén más poder para quemar y chismosear!</p>
+            <label>¿Cuántos créditos quieres?</label>
+            <input id="inputCreditos" type="number" placeholder="Ej: 10" min="1">
+            <p><strong>Costo:</strong> S/ 1.00 por cada crédito.</p>
+            <p id="montoTotalRecarga"><strong>Total a pagar:</strong> S/ <span id="totalPagar">0.00</span></p>
+            <div id="qr-code-recarga" style="display: none;">
+                <img id="imgQRRecarga" src="https://i.imgur.com/HPnIqui.png" alt="QR de Yape">
+            </div>
+            <div class="modal-buttons">
+                <button id="btnCerrarRecargar" class="btn-close">Cerrar</button>
+                <button id="btnGenerarPagoRecarga" class="btn-primary">Generar Pago</button>
+                <button id="btnYaPagueRecarga" class="btn-primary" style="display: none;">Ya realicé el pago</button>
+            </div>
+            <div id="estadoPagoRecarga" class="estado-mensaje"></div>
+        </div>
+    </div>
+
+    <footer>Página de servicio público creada por Yakche69 👹</footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // --- ELEMENTOS DEL DOM ---
+            const userControls = document.getElementById('userControls');
+            const modalAuth = document.getElementById('modalAuth');
+            const authTitle = document.getElementById('authTitle');
+            const authUsername = document.getElementById('authUsername');
+            const authPassword = document.getElementById('authPassword');
+            const btnCerrarAuth = document.getElementById('btnCerrarAuth');
+            const btnEnviarAuth = document.getElementById('btnEnviarAuth');
+            const estadoAuth = document.getElementById('estadoAuth');
+
+            const btnQuemar = document.getElementById('btnQuemar');
+            const modalQuemar = document.getElementById('modalQuemar');
+            const btnCerrar = document.getElementById('btnCerrar');
+            const btnGuardar = document.getElementById('btnGuardar');
+            const estadoPago = document.getElementById('estadoPago');
+
+            const inputNombre = document.getElementById('inputNombre');
+            const inputRedes = document.getElementById('inputRedes');
+            const inputEdad = document.getElementById('inputEdad');
+            const inputOrigen = document.getElementById('inputOrigen');
+            const inputEvidencias = document.getElementById('inputEvidencias');
+            const inputFotos = document.getElementById('inputFotos');
+
+            const listaRegistros = document.getElementById('listaRegistros');
+
+            const modalPago = document.getElementById('modalPago');
+            const btnCerrarPago = document.getElementById('btnCerrarPago');
+            const btnYaPague = document.getElementById('btnYaPague');
+            const estadoPagoYape = document.getElementById('estadoPagoYape');
+
+            const modalDetalle = document.getElementById('modalDetalle');
+            const btnCerrarDetalle = document.getElementById('btnCerrarDetalle');
+            const detalleNombre = document.getElementById('detalleNombre');
+            const detalleContenido = document.getElementById('detalleContenido');
+
+            // --- ELEMENTOS DE RECARGA ---
+            const modalRecargar = document.getElementById('modalRecargar');
+            const btnCerrarRecargar = document.getElementById('btnCerrarRecargar');
+            const btnGenerarPagoRecarga = document.getElementById('btnGenerarPagoRecarga');
+            const btnYaPagueRecarga = document.getElementById('btnYaPagueRecarga');
+            const inputCreditos = document.getElementById('inputCreditos');
+            const totalPagar = document.getElementById('totalPagar');
+            const qrCodeRecarga = document.getElementById('qr-code-recarga');
+            const imgQRRecarga = document.getElementById('imgQRRecarga');
+            const estadoPagoRecarga = document.getElementById('estadoPagoRecarga');
+
+            // --- ESTADO GLOBAL ---
+            let currentUser = null;
+            let postIdActual = null;
+            let isLoginMode = true;
+            let recargaIdActual = null;
+
+            // --- LÓGICA DE AUTENTICACIÓN ---
+            function updateUserUI() {
+                if (currentUser) {
+                    userControls.innerHTML = '<span>Créditos: ' + currentUser.credits + '</span><button id="btnRecargar">Recargar</button><button id="btnLogout">Cerrar Sesión</button>';
+                    document.getElementById('btnLogout').addEventListener('click', () => {
+                        currentUser = null;
+                        localStorage.removeItem('quemaInfielUser');
+                        location.reload();
+                    });
+                    document.getElementById('btnRecargar').addEventListener('click', () => {
+                        resetModalRecarga();
+                        modalRecargar.style.display = 'flex';
+                    });
+                } else {
+                    userControls.innerHTML = '<button id="btnLogin">Iniciar Sesión</button><button id="btnRegister">Registrarse</button>';
+                    document.getElementById('btnLogin').addEventListener('click', () => {
+                        isLoginMode = true;
+                        authTitle.textContent = 'Iniciar Sesión';
+                        btnEnviarAuth.textContent = 'Entrar';
+                        resetAuthModal();
+                        modalAuth.style.display = 'flex';
+                    });
+                    document.getElementById('btnRegister').addEventListener('click', () => {
+                        isLoginMode = false;
+                        authTitle.textContent = 'Registrarse';
+                        btnEnviarAuth.textContent = 'Crear Cuenta';
+                        resetAuthModal();
+                        modalAuth.style.display = 'flex';
+                    });
+                }
+            }
+
+            function resetAuthModal() {
+                authUsername.value = '';
+                authPassword.value = '';
+                estadoAuth.innerHTML = '';
+            }
+
+            btnCerrarAuth.addEventListener('click', () => {
+                modalAuth.style.display = 'none';
+            });
+
+            btnEnviarAuth.addEventListener('click', async () => {
+                const username = authUsername.value.trim();
+                const password = authPassword.value.trim();
+                if (!username || !password) {
+                    alert('Usuario y contraseña son obligatorios.');
+                    return;
+                }
+                const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+                try {
+                    estadoAuth.innerHTML = '<p>Procesando...</p>';
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message);
+                    if (isLoginMode) {
+                        currentUser = data.user;
+                        localStorage.setItem('quemaInfielUser', JSON.stringify(currentUser));
+                        updateUserUI();
+                        modalAuth.style.display = 'none';
+                    } else {
+                        estadoAuth.innerHTML = '<p>¡Cuenta creada! Ahora inicia sesión.</p>';
+                        setTimeout(() => {
+                            modalAuth.style.display = 'none';
+                        }, 2000);
+                    }
+                } catch (err) {
+                    estadoAuth.innerHTML = '<p style="color:red;">' + err.message + '</p>';
+                }
+            });
+
+            // --- LÓGICA DE LA APLICACIÓN ---
+            function requireLogin(callback) {
+                if (!currentUser) {
+                    alert('Debes iniciar sesión para realizar esta acción.');
+                    modalAuth.style.display = 'flex';
+                    return;
+                }
+                callback();
+            }
+
+            btnQuemar.addEventListener('click', () => requireLogin(() => modalQuemar.style.display = 'flex'));
+            btnCerrar.addEventListener('click', () => modalQuemar.style.display = 'none');
+            btnCerrarPago.addEventListener('click', () => modalPago.style.display = 'none');
+            btnCerrarDetalle.addEventListener('click', () => modalDetalle.style.display = 'none');
+
+            btnGuardar.addEventListener('click', () => requireLogin(async () => {
+                const nombre = inputNombre.value.trim();
+                if (!nombre) {
+                    alert("¡El nombre del culpable es obligatorio! 😈");
+                    return;
+                }
+                const payload = {
+                    userId: currentUser.id,
+                    nombre,
+                    redes: inputRedes.value.trim(),
+                    edad: inputEdad.value.trim(),
+                    origen: inputOrigen.value.trim(),
+                    evidencias: inputEvidencias.value.trim()
+                };
+                const file = inputFotos.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        payload.fotoBase64 = ev.target.result;
+                        enviarSolicitud(payload);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    payload.fotoBase64 = null;
+                    enviarSolicitud(payload);
+                }
+            }));
+
+            async function enviarSolicitud(payload) {
+                try {
+                    estadoPago.style.display = "block";
+                    estadoPago.innerHTML = '<p>👹 Enviando solicitud...</p>';
+                    const res = await fetch("/api/solicitar-quemada", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message);
+                    postIdActual = data.postId;
+                    modalQuemar.style.display = "none";
+                    modalPago.style.display = "flex";
+                    estadoPagoYape.innerHTML = '<p>Solicitud registrada. Realiza el pago y presiona "Ya realicé el pago".</p>';
+                } catch (err) {
+                    console.error("Error en solicitud:", err);
+                    estadoPago.textContent = err.message;
+                }
+            }
+
+            btnYaPague.addEventListener('click', async () => {
+                if (!postIdActual) return;
+                try {
+                    estadoPagoYape.innerHTML = '<p>👹 Notificando pago...</p>';
+                    btnYaPague.disabled = true;
+                    const res = await fetch("/api/registrar-pago-yape", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ postId: postIdActual, monto: 10 })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message);
+                    estadoPagoYape.innerHTML = '<p>' + data.message + '</p><p>Espera la confirmación...</p>';
+                    setTimeout(() => {
+                        modalPago.style.display = 'none';
+                        location.reload();
+                    }, 5000);
+                } catch (err) {
+                    console.error("Error al registrar pago:", err);
+                    estadoPagoYape.textContent = err.message;
+                } finally {
+                    btnYaPague.disabled = false;
+                }
+            });
+
+            // --- LÓGICA DE RECARGA ---
+            function resetModalRecarga() {
+                inputCreditos.value = '';
+                totalPagar.textContent = '0.00';
+                qrCodeRecarga.style.display = 'none';
+                btnGenerarPagoRecarga.style.display = 'block';
+                btnYaPagueRecarga.style.display = 'none';
+                estadoPagoRecarga.innerHTML = '';
+                recargaIdActual = null;
+            }
+
+            btnCerrarRecargar.addEventListener('click', () => modalRecargar.style.display = 'none');
+
+            inputCreditos.addEventListener('input', () => {
+                const creditos = parseInt(inputCreditos.value) || 0;
+                const total = creditos * 1.00;
+                totalPagar.textContent = total.toFixed(2);
+            });
+
+            btnGenerarPagoRecarga.addEventListener('click', async () => {
+                const creditos = parseInt(inputCreditos.value);
+                if (!creditos || creditos <= 0) {
+                    alert('Ingresa una cantidad válida de créditos.');
+                    return;
+                }
+                try {
+                    estadoPagoRecarga.innerHTML = '<p>Generando solicitud de recarga...</p>';
+                    const res = await fetch('/api/solicitar-recarga', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.id, creditos })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message);
+                    recargaIdActual = data.recargaId;
+                    qrCodeRecarga.style.display = 'block';
+                    btnGenerarPagoRecarga.style.display = 'none';
+                    btnYaPagueRecarga.style.display = 'block';
+                    estadoPagoRecarga.innerHTML = '<p>Solicitud generada. Paga S/ ' + data.monto.toFixed(2) + ' y presiona "Ya realicé el pago".</p>';
+                } catch (err) {
+                    console.error("Error en solicitud de recarga:", err);
+                    estadoPagoRecarga.textContent = err.message;
+                }
+            });
+
+            btnYaPagueRecarga.addEventListener('click', async () => {
+                if (!recargaIdActual) return;
+                try {
+                    estadoPagoRecarga.innerHTML = '<p>Notificando pago...</p>';
+                    btnYaPagueRecarga.disabled = true;
+                    const res = await fetch('/api/registrar-pago-recarga', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ recargaId: recargaIdActual })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message);
+                    estadoPagoRecarga.innerHTML = '<p>' + data.message + '</p><p>Tus créditos serán añadidos pronto.</p>';
+                    setTimeout(() => {
+                        modalRecargar.style.display = 'none';
+                        location.reload();
+                    }, 5000);
+                } catch (err) {
+                    console.error("Error al registrar pago de recarga:", err);
+                    estadoPagoRecarga.textContent = err.message;
+                } finally {
+                    btnYaPagueRecarga.disabled = false;
+                }
+            });
+
+            // --- Cargar Muro y Ver Detalles ---
+            async function cargarMuro() {
+                try {
+                    const res = await fetch("/api/muro-publico");
+                    const data = await res.json();
+                    listaRegistros.innerHTML = "";
+                    if (!data.ok || !Array.isArray(data.posts) || data.posts.length === 0) {
+                        listaRegistros.innerHTML = '<p style="text-align:center; color:#9ca3af; font-family: Creepster; grid-column: 1 / -1;">El muro está vacío... por ahora.</p>';
+                        return;
+                    }
+                    data.posts.forEach(post => {
+                        const card = document.createElement("div");
+                        card.className = "card";
+                        card.innerHTML = '<h3>' + post.nombre + '</h3><p>Haz clic para ver los detalles...</p>';
+                        card.addEventListener('click', () => requireLogin(async () => {
+                            try {
+                                const res = await fetch('/api/posts/detalles', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ postId: post.id, userId: currentUser.id })
+                                });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.message);
+                                const fullPost = data.post;
+                                detalleNombre.textContent = '👹 Detalles de ' + fullPost.nombre + ' 👹';
+                                detalleContenido.innerHTML = `
+                                    <p><strong>Redes:</strong> \${fullPost.redes}</p>
+                                    <p><strong>Edad:</strong> \${fullPost.edad}</p>
+                                    <p><strong>Origen:</strong> \${fullPost.origen}</p>
+                                    <p><strong>EVIDENCIA COMPLETA:</strong></p>
+                                    <p>\${fullPost.evidencias}</p>
+                                    <img src="${fullPost.fotoBase64}" alt="Evidencia de ${fullPost.nombre}">
+                                `;
+                                modalDetalle.style.display = 'flex';
+                                updateUserUI();
+                            } catch (err) {
+                                alert(err.message);
+                            }
+                        }));
+                        listaRegistros.appendChild(card);
+                    });
+                } catch (err) {
+                    console.error("Error cargando muro:", err);
+                    listaRegistros.innerHTML = '<p style="text-align:center; color:#9ca3af; font-family: Creepster; grid-column: 1 / -1;">No se pudieron cargar las almas.</p>';
+                }
+            }
+
+            // --- INICIO ---
+            const savedUser = localStorage.getItem('quemaInfielUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+            }
+            updateUserUI();
+            cargarMuro();
+        });
+    </script>
+</body>
+</html>
