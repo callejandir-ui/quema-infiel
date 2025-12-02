@@ -323,7 +323,11 @@ app.post('/api/publicar-directo', async (req, res) => {
     const mensaje = `✅ <b>NUEVO POST PUBLICADO DIRECTAMENTE</b> ✅\n\n<b>Usuario:</b> <i>${user.username}</i>\n<b>Nombre del Infiel:</b> <i>${nombre}</i>\n<b>ID del Post:</b> <code>${postId}</code>\n\nCréditos descontados.`;
     await sendTelegramAlert(mensaje);
 
-    res.json({ ok: true, message: 'Post publicado exitosamente.' });
+    res.json({ 
+        ok: true, 
+        message: 'Post publicado exitosamente.',
+        userCredits: user.credits // <-- ¡LÍNEA AÑADIDA!
+    });
 });
 // <-- ¡FIN DE LA ADICIÓN! -->
 
@@ -435,9 +439,10 @@ app.post('/api/posts/detalles', async (req, res) => {
     user.credits -= COSTO_VER_CHISME;
     saveDatabase(); // <-- GUARDAR CAMBIO
     console.log("Usuario " + user.username + " gastó " + COSTO_VER_CHISME + " créditos para ver el post " + postId + "."); // <-- CORREGIDO
-    res.json({
-        ok: true,
-        post: post
+    res.json({ 
+        ok: true, 
+        post: post,
+        userCredits: user.credits // <-- ¡LÍNEA AÑADIDA!
     });
 });
 
