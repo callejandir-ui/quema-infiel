@@ -219,7 +219,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
     }
     // --- Lógica para aprobar/rechazar recargas ---
     else if (text.startsWith('/approve_recarga_')) {
-        const recargaId = text.split('_').slice(2).join('_'); // <-- LÍNEA ARREGLADA
+        const recargaId = text.split('_').slice(2).join('_');
         const recarga = pendingRecargas[recargaId];
         if (recarga) {
             const user = findUserById(recarga.userId);
@@ -233,7 +233,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             saveDatabase(); // <-- GUARDAR CAMBIO
         }
     } else if (text.startsWith('/reject_recarga_')) {
-        const recargaId = text.split('_').slice(2).join('_'); // <-- LÍNEA TAMBIÉN ARREGLADA POR SI ACASO
+        const recargaId = text.split('_').slice(2).join('_');
         if (pendingRecargas[recargaId]) {
             const recarga = pendingRecargas[recargaId];
             console.log(`❌ Recarga \${recargaId} RECHAZADA.`);
@@ -275,6 +275,21 @@ app.get('/api/muro-publico', (req, res) => {
     res.json({ ok: true, posts: publicPosts });
 });
 
+// --- RUTA DE DIAGNÓSTICO ---
+app.get('/api/test-telegram', async (req, res) => {
+    console.log(">>> INICIANDO TEST DE CONEXIÓN A TELEGRAM...");
+    try {
+        const testUrl = `https://api.telegram.org/bot\${TELEGRAM_BOT_TOKEN}/getMe`;
+        const response = await axios.get(testUrl);
+        console.log(">>> TEST DE TELEGRAM EXITOSO:", response.data);
+        res.json({ ok: true, message: "Conexión a Telegram exitosa.", botInfo: response.data.result });
+    } catch (error) {
+        console.error(">>> ERROR EN EL TEST DE TELEGRAM:", error.response ? error.response.data : error.message);
+        res.status(500).json({ ok: false, message: "Error al conectar con Telegram.", error: error.response ? error.response.data : error.message });
+    }
+});
+// --- FIN DE LA RUTA DE DIAGNÓSTICO ---
+
 
 // --- Middleware de errores (DEBE ESTAR AL FINAL) ---
 app.use((err, req, res, next) => {
@@ -299,7 +314,7 @@ if (Object.keys(posts).length === 0) {
         fechaPago: new Date().toISOString()
     };
     saveDatabase(); // <-- GUARDAR CAMBIO
-    console.log(`✅ Post de ejemplo creado: \${posts[ejemploPostId].nombre} (ID: \${ejemploPostId})`);
+    console.log(`✅ Post de ejemplo creado: ${posts[ejemploPostId].nombre} (ID: ${ejemploPostId})`);
 }
 // --- FIN DEL CÓDIGO DE PRUEBA ---
 
