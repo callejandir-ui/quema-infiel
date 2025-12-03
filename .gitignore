@@ -1,1 +1,1 @@
-# Dependencies /node_modules # Environment variables .env # Logs npm-debug.log*
+# Dependencies /node_modules # Environment variables .env # Logs npm-debug.log* # Archivo de base de datos maestro (¡NO SUBIR!) database-master.json
