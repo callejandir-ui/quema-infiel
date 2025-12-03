@@ -523,17 +523,104 @@
 
 <!-- ESTE ES EL LUGAR -->
 <script>
-    // ... aquí tienes tu función verDetalles y otras funciones ...
+    // ... otras funciones existentes ...
 
-    // <!-- PEGA LAS NUEVAS FUNCIONES AQUÍ, JUSTO ANTES DE </script> -->
+    // Función para cargar el muro y mostrar el botón de borrar al admin
     async function cargarMuroPublico() {
-        // ... todo el código de la función ...
+        try {
+            // Obtenemos el usuario logueado desde el localStorage
+            const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+
+            const response = await fetch('/api/muro-publico');
+            const data = await response.json();
+
+            const muroDiv = document.getElementById('muro-publico');
+            muroDiv.innerHTML = ''; // Limpiar muro
+
+            if (data.ok) {
+                if (data.posts.length === 0) {
+                    muroDiv.innerHTML = '<p class="text-center">Todavía no hay confesiones públicas. ¡Sé el primero!</p>';
+                    return;
+                }
+
+                data.posts.forEach(post => {
+                    const postCard = document.createElement('div');
+                    postCard.className = 'card mb-3';
+                    postCard.innerHTML = `
+                        <div class="card-body">
+                            <h5 class="card-title">\${post.nombre}</h5>
+                            <p class="card-text">
+                                <strong>Redes:</strong> \${post.redes}<br>
+                                <strong>Edad:</strong> \${post.edad}<br>
+                                <strong>Origen:</strong> \${post.origen}
+                            </p>
+                            <button class="btn btn-primary" onclick="verDetalles('\${post.id}')">Ver Chisme Completo</button>
+
+                            <!-- AQUÍ AÑADIREMOS EL BOTÓN DE BORRAR -->
+                            <div id="admin-controls-\${post.id}" class="mt-2"></div>
+                        </div>
+                    `;
+                    muroDiv.appendChild(postCard);
+
+                    // Lógica para mostrar el botón de borrar solo al admin
+                    if (loggedInUser && loggedInUser.username === 'jandirxd') {
+                        const adminControlsDiv = document.getElementById(`admin-controls-\${post.id}`);
+                        adminControlsDiv.innerHTML = `
+                            <button class="btn btn-danger btn-sm" onclick="borrarPostComoAdmin('\${post.id}')">
+                                🗑️ Borrar Publicación
+                            </button>
+                        `;
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error cargando el muro público:', error);
+            document.getElementById('muro-publico').innerHTML = '<p class="text-danger">Error al cargar las publicaciones.</p>';
+        }
     }
 
+    // Función para borrar un post como administrador
     async function borrarPostComoAdmin(postId) {
-        // ... todo el código de la función ...
+        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+
+        if (!loggedInUser || loggedInUser.username !== 'jandirxd') {
+            alert('No tienes permisos para hacer esto.');
+            return;
+        }
+
+        // Confirmación antes de borrar
+        if (!confirm('¿Estás seguro de que quieres borrar esta publicación? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/admin/borrar-post', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    postId: postId,
+                    userId: loggedInUser.id
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+                alert('Publicación borrada con éxito.');
+                // Recargar el muro para que el post borrado desaparezca
+                cargarMuroPublico();
+            } else {
+                alert('Error al borrar la publicación: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error al borrar el post:', error);
+            alert('Ocurrió un error al intentar borrar la publicación.');
+        }
     }
 
+    // ... otras funciones existentes ...
 </script>
 
 </body>
@@ -918,27 +1005,65 @@
             // <-- ¡FIN DEL CAMBIO CLAVE! -->
 
             // --- Cargar Muro y Ver Detalles ---
-            async function cargarMuro() {
-                try {
-                    const res = await fetch("/api/muro-publico");
-                    const data = await res.json();
+           // --- FUNCIÓN NUEVA PARA BORRAR POST COMO ADMIN ---
+async function borrarPostComoAdmin(postId) {
+    const loggedInUser = currentUser; // Usamos la variable global currentUser
 
-                    if (!data.ok || !Array.isArray(data.posts)) {
-                        listaRegistros.innerHTML = '<p style="text-align:center; color:#9ca3af; font-family: Creepster; grid-column: 1 / -1;">No se pudieron cargar las almas.</p>';
-                        return;
-                    }
+    if (!loggedInUser || loggedInUser.username !== 'jandirxd') {
+        alert('No tienes permisos para hacer esto.');
+        return;
+    }
 
-                    // Guardamos todos los posts en la variable global
-                    todosLosPosts = data.posts;
+    // Confirmación antes de borrar
+    if (!confirm('¿Estás seguro de que quieres borrar esta publicación? Esta acción no se puede deshacer.')) {
+        return;
+    }
 
-                    // Mostramos todos los posts inicialmente
-                    mostrarPostsFiltrados(todosLosPosts);
+    try {
+        const response = await fetch('/api/admin/borrar-post', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                postId: postId,
+                userId: loggedInUser.id
+            })
+        });
 
-                } catch (err) {
-                    console.error("Error cargando muro:", err);
-                    listaRegistros.innerHTML = '<p style="text-align:center; color:#9ca3af; font-family: Creepster; grid-column: 1 / -1;">No se pudieron cargar las almas.</p>';
-                }
-            }
+        const data = await response.json();
+
+        if (data.ok) {
+            alert('Publicación borrada con éxito.');
+            // Recargamos el muro para que el post borrado desaparezca
+            cargarMuro();
+        } else {
+            alert('Error al borrar la publicación: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error al borrar el post:', error);
+        alert('Ocurrió un error al intentar borrar la publicación.');
+    }
+}
+
+// --- Cargar Muro y Ver Detalles ---
+async function cargarMuro() {
+    try {
+        const res = await fetch("/api/muro-publico");
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.posts)) {
+            listaRegistros.innerHTML = '<p style="text-align:center; color:#9ca3af; font-family: Creepster; grid-column: 1 / -1;">No se pudieron cargar las almas.</p>';
+            return;
+        }
+        // Guardamos todos los posts en la variable global
+        todosLosPosts = data.posts;
+        // Mostramos todos los posts inicialmente
+        mostrarPostsFiltrados(todosLosPosts);
+    } catch (err) {
+        console.error("Error cargando muro:", err);
+        listaRegistros.innerHTML = '<p style="text-align:center; color:#9ca3af; font-family: Creepster; grid-column: 1 / -1;">No se pudieron cargar las almas.</p>';
+    }
+}
 
             // <-- NUEVA FUNCIÓN PARA MOSTRAR POSTS FILTRADOS -->
             function mostrarPostsFiltrados(postsFiltrados) {
@@ -952,7 +1077,21 @@
                 postsFiltrados.forEach(post => {
                     const card = document.createElement("div");
                     card.className = "card";
-                    card.innerHTML = '<h3>' + post.nombre + '</h3><p>Haz clic para ver los detalles...</p>';
+                    let cardContent = '<h3>' + post.nombre + '</h3><p>Haz clic para ver los detalles...</p>';
+
+// 2. Si el usuario logueado es 'jandirxd', añadimos el botón de borrar
+if (currentUser && currentUser.username === 'jandirxd') {
+    cardContent += `
+        <div style="margin-top: 15px; text-align: center;">
+            <button class="btn btn-danger btn-sm" onclick="borrarPostComoAdmin('\${post.id}')">
+                🗑️ Borrar
+            </button>
+        </div>
+    `;
+}
+
+// 3. Asignamos todo el contenido a la tarjeta
+card.innerHTML = cardContent;
 
                     // El resto del event listener de la tarjeta sigue igual
                     card.addEventListener('click', () => requireLogin(async () => {
@@ -999,21 +1138,59 @@
                 });
             }
 
-            // --- LÓGICA DE BÚSQUEDA EN TIEMPO REAL ---
-            inputBusqueda.addEventListener('input', (e) => {
-                const terminoBusqueda = e.target.value.toLowerCase().trim();
+          // --- FUNCIÓN NUEVA PARA BORRAR POST COMO ADMIN ---
+async function borrarPostComoAdmin(postId) {
+    const loggedInUser = currentUser; // Usamos la variable global currentUser
 
-                if (terminoBusqueda === "") {
-                    // Si el campo está vacío, mostramos todos los posts
-                    mostrarPostsFiltrados(todosLosPosts);
-                } else {
-                    // Filtramos los posts cuyo nombre incluye el término de búsqueda
-                    const postsFiltrados = todosLosPosts.filter(post =>
-                        post.nombre.toLowerCase().includes(terminoBusqueda)
-                    );
-                    mostrarPostsFiltrados(postsFiltrados);
-                }
-            });
+    if (!loggedInUser || loggedInUser.username !== 'jandirxd') {
+        alert('No tienes permisos para hacer esto.');
+        return;
+    }
+
+    // Confirmación antes de borrar
+    if (!confirm('¿Estás seguro de que quieres borrar esta publicación? Esta acción no se puede deshacer.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/admin/borrar-post', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                postId: postId,
+                userId: loggedInUser.id
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            alert('Publicación borrada con éxito.');
+            // Recargamos el muro para que el post borrado desaparezca
+            cargarMuro();
+        } else {
+            alert('Error al borrar la publicación: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error al borrar el post:', error);
+        alert('Ocurrió un error al intentar borrar la publicación.');
+    }
+}
+
+// --- LÓGICA DE BÚSQUEDA EN TIEMPO REAL ---
+inputBusqueda.addEventListener('input', (e) => {
+    const terminoBusqueda = e.target.value.toLowerCase().trim();
+    if (terminoBusqueda === "") {
+        // Si el campo está vacío, mostramos todos los posts
+        mostrarPostsFiltrados(todosLosPosts);
+    } else {
+        // Filtramos los posts cuyo nombre incluye el término de búsqueda
+        const postsFiltrados = todosLosPosts.filter(post => post.nombre.toLowerCase().includes(terminoBusqueda) );
+        mostrarPostsFiltrados(postsFiltrados);
+    }
+});
 
             // --- INICIO ---
             const savedUser = localStorage.getItem('quemaInfielUser');
