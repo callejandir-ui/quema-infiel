@@ -1140,7 +1140,8 @@ card.innerHTML = cardContent;
 
           // --- FUNCIÓN NUEVA PARA BORRAR POST COMO ADMIN ---
 async function borrarPostComoAdmin(postId) {
-    const loggedInUser = currentUser; // Usamos la variable global currentUser
+    // Obtenemos el usuario desde la variable global que tu app usa
+    const loggedInUser = currentUser;
 
     if (!loggedInUser || loggedInUser.username !== 'jandirxd') {
         alert('No tienes permisos para hacer esto.');
@@ -1160,7 +1161,7 @@ async function borrarPostComoAdmin(postId) {
             },
             body: JSON.stringify({
                 postId: postId,
-                userId: loggedInUser.id
+                userId: loggedInUser.id // Usamos el ID del usuario logueado
             })
         });
 
