@@ -500,13 +500,30 @@ app.get('/api/muro-publico', (req, res) => {
 
 
 // --- Middleware de errores (DEBE ESTAR AL FINAL) ---
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        ok: false,
-        message: 'Error interno del servidor.'
-    });
+app.post('/api/admin/borrar-post', (req, res) => {
+    const { postId, userId } = req.body;
+
+    // 1. Verificar que el usuario sea el administrador (jandirxd)
+    const user = findUserById(userId);
+    if (!user || user.username !== 'jandirxd') {
+        return res.status(403).json({ ok: false, message: 'No tienes permiso para realizar esta acción.' });
+    }
+
+    // 2. Verificar que el post exista
+    if (!posts[postId]) {
+        return res.status(404).json({ ok: false, message: 'Publicación no encontrada.' });
+    }
+
+    // 3. Borrar el post
+    const nombrePostBorrado = posts[postId].nombre;
+    delete posts[postId];
+    saveDatabase(); // Guardar los cambios en la base de datos
+
+    console.log(`🔥 POST BORRADO por el admin (${user.username}): "${nombrePostBorrado}" (ID: \${postId})`);
+
+    res.json({ ok: true, message: 'Publicación borrada con éxito.' });
 });
+// --- FIN DE RUTA DE ADMINISTRADOR ---
 
 /*
 // --- CÓDIGO DE PRUEBA (solo se ejecuta si no hay posts) ---
