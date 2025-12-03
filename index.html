@@ -903,46 +903,6 @@
             // <-- ¡FIN DEL CAMBIO CLAVE! -->
 
             // --- Cargar Muro y Ver Detalles ---
-           // --- FUNCIÓN NUEVA PARA BORRAR POST COMO ADMIN ---
-async function borrarPostComoAdmin(postId) {
-    const loggedInUser = currentUser; // Usamos la variable global currentUser
-
-    if (!loggedInUser || loggedInUser.username !== 'jandirxd') {
-        alert('No tienes permisos para hacer esto.');
-        return;
-    }
-
-    // Confirmación antes de borrar
-    if (!confirm('¿Estás seguro de que quieres borrar esta publicación? Esta acción no se puede deshacer.')) {
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/admin/borrar-post', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                postId: postId,
-                userId: loggedInUser.id
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.ok) {
-            alert('Publicación borrada con éxito.');
-            // Recargamos el muro para que el post borrado desaparezca
-            cargarMuro();
-        } else {
-            alert('Error al borrar la publicación: ' + data.message);
-        }
-    } catch (error) {
-        console.error('Error al borrar el post:', error);
-        alert('Ocurrió un error al intentar borrar la publicación.');
-    }
-}
 
 // --- Cargar Muro y Ver Detalles ---
 async function cargarMuro() {
@@ -1049,8 +1009,8 @@ function mostrarPostsFiltrados(postsFiltrados) {
 
 
           // --- FUNCIÓN NUEVA PARA BORRAR POST COMO ADMIN ---
-async function borrarPostComoAdmin(postId) {
-    // Obtenemos el usuario desde la variable global que tu app usa
+// La colgamos de window para que el onclick="" del HTML pueda verla
+window.borrarPostComoAdmin = async function(postId) {
     const loggedInUser = currentUser;
 
     if (!loggedInUser || loggedInUser.username !== 'jandirxd') {
@@ -1058,7 +1018,6 @@ async function borrarPostComoAdmin(postId) {
         return;
     }
 
-    // Confirmación antes de borrar
     if (!confirm('¿Estás seguro de que quieres borrar esta publicación? Esta acción no se puede deshacer.')) {
         return;
     }
@@ -1071,7 +1030,7 @@ async function borrarPostComoAdmin(postId) {
             },
             body: JSON.stringify({
                 postId: postId,
-                userId: loggedInUser.id // Usamos el ID del usuario logueado
+                userId: loggedInUser.id
             })
         });
 
@@ -1079,7 +1038,6 @@ async function borrarPostComoAdmin(postId) {
 
         if (data.ok) {
             alert('Publicación borrada con éxito.');
-            // Recargamos el muro para que el post borrado desaparezca
             cargarMuro();
         } else {
             alert('Error al borrar la publicación: ' + data.message);
@@ -1088,7 +1046,8 @@ async function borrarPostComoAdmin(postId) {
         console.error('Error al borrar el post:', error);
         alert('Ocurrió un error al intentar borrar la publicación.');
     }
-}
+};
+
 
 // --- LÓGICA DE BÚSQUEDA EN TIEMPO REAL ---
 inputBusqueda.addEventListener('input', (e) => {
