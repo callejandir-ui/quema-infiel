@@ -17,6 +17,23 @@ const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
 
 // --- BASE DE DATOS CON PERSISTENCIA EN ARCHIVO JSON ---
 const DB_FILE = '/var/data/database.json';
+// --- FUNCIÓN PARA SINCRONIZAR LA BASE DE DATOS ---
+function syncDatabaseWithMaster() {
+    const masterPath = path.join(__dirname, 'database-master.json');
+    const serverPath = DB_FILE; // Esta variable ya existe en tu código
+
+    if (fs.existsSync(masterPath)) {
+        try {
+            const masterData = fs.readFileSync(masterPath, 'utf8');
+            fs.writeFileSync(serverPath, masterData, 'utf8');
+            console.log('✅ Base de datos sincronizada con database-master.json');
+        } catch (error) {
+            console.error('❌ Error al sincronizar la base de datos:', error);
+        }
+    } else {
+        console.log('⚠️ No se encontró database-master.json. No se sincronizó la base de datos.');
+    }
+}
 
 // Función para cargar la base de datos desde el archivo
 function loadDatabase() {
@@ -43,6 +60,7 @@ function saveDatabase() {
 
 // Cargar la base de datos al inicio
 let db = loadDatabase();
+syncDatabaseWithMaster();
 
 // Atajos para no tener que cambiar todo el código existente
 let users = db.users;
