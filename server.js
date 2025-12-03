@@ -37,20 +37,39 @@ function syncDatabaseWithMaster() {
 
 // Función para cargar la base de datos desde el archivo
 function loadDatabase() {
-    if (fs.existsSync(DB_FILE)) {
-        const data = fs.readFileSync(DB_FILE);
-        return JSON.parse(data);
+    const masterPath = path.join(__dirname, 'database-master.json');
+
+    // 1. PRIORIDAD MÁXIMA: Si existe el archivo maestro, úsalo para sobreescribir la base de datos del servidor.
+    if (fs.existsSync(masterPath)) {
+        try {
+            console.log('🔧 Encontrado database-master.json. Sincronizando la base de datos...');
+            const masterData = fs.readFileSync(masterPath, 'utf8');
+            fs.writeFileSync(DB_FILE, masterData, 'utf8');
+            console.log('✅ Base de datos del servidor actualizada desde el maestro.');
+            // Ahora que el archivo del servidor está bien, léelo y devuélvelo.
+            return JSON.parse(masterData);
+        } catch (error) {
+            console.error('❌ Error fatal al usar el archivo maestro:', error);
+            // Si ni el maestro funciona, no podemos arrancar.
+            process.exit(1); // Detiene la aplicación
+        }
     }
-    // Si el archivo no existe, devuelve la estructura inicial
-    return {
-        nextUserId: 1,
-        nextPostId: 1,
-        nextRecargaId: 1,
-        users: {},
-        posts: {},
-        pendingPayments: {},
-        pendingRecargas: {}
-    };
+
+    // 2. Si NO hay archivo maestro, intenta cargar el del servidor (el comportamiento antiguo).
+    console.log('⚠️ No se encontró database-master.json. Intentando cargar la base de datos local del servidor...');
+    if (fs.existsSync(DB_FILE)) {
+        try {
+            const data = fs.readFileSync(DB_FILE, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            console.error('❌ Error fatal al leer el archivo de la base de datos del servidor:', error);
+            process.exit(1); // El archivo está roto y no hay maestro para arreglarlo. Detenemos la app.
+        }
+    }
+
+    // 3. Si no hay nada, devuelve la estructura inicial.
+    console.log('⚠️ No se encontró ningún archivo de base de datos. Creando una nueva...');
+    return { nextUserId: 1, nextPostId: 1, nextRecargaId: 1, users: {}, posts: {}, pendingPayments: {}, pendingRecargas: {} };
 }
 
 // Función para guardar la base de datos en el archivo
@@ -60,7 +79,6 @@ function saveDatabase() {
 
 // Cargar la base de datos al inicio
 let db = loadDatabase();
-syncDatabaseWithMaster();
 
 // Atajos para no tener que cambiar todo el código existente
 let users = db.users;
