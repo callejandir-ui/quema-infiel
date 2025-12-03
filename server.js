@@ -490,26 +490,18 @@ app.use((err, req, res, next) => {
     });
 });
 
+/*
 // --- CÓDIGO DE PRUEBA (solo se ejecuta si no hay posts) ---
 if (Object.keys(posts).length === 0) {
     const ejemploPostId = 'post_' + db.nextPostId++;
-    posts[ejemploPostId] = {
-        id: ejemploPostId,
-        userId: 'user_0', // Un ID de usuario ficticio
-        nombre: "El Cacherito de San Miguel",
-        redes: "@cachero_miguelino_99",
-        edad: "28",
-        origen: "Lima - San Miguel",
-        evidencias: "Le encontré mensajes con 'la amiguita especial' en su Instagram guardado. ¡El colmo de la traición!",
-        fotoBase64: "https://i.imgur.com/8pXhL1u.jpeg",
-        fechaCreacion: new Date().toISOString(),
-        estado: 'PUBLICADO',
-        fechaPago: new Date().toISOString()
+    posts[ejemploPostId] = { id: ejemploPostId, userId: 'user_0', // Un ID de usuario ficticio
+        nombre: "El Cacherito de San Miguel", redes: "@cachero_miguelino_99", edad: "28", origen: "Lima - San Miguel", evidencias: "Le encontré mensajes con 'la amiguita especial' en su Instagram guardado. ¡El colmo de la traición!", fotoBase64: "https://i.imgur.com/8pXhL1u.jpeg", fechaCreacion: new Date().toISOString(), estado: 'PUBLICADO', fechaPago: new Date().toISOString()
     };
     saveDatabase(); // <-- GUARDAR CAMBIO
     console.log("✅ Post de ejemplo creado: " + posts[ejemploPostId].nombre + " (ID: " + ejemploPostId + ")"); // <-- CORREGIDO
 }
 // --- FIN DEL CÓDIGO DE PRUEBA ---
+*/
 
 
 const PORT = process.env.PORT || 3000;
