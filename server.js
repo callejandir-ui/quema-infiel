@@ -11,13 +11,13 @@ const fs = require('fs'); // <-- Módulo para manejar archivos
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8549907358:AAGF_RFJ45DQc0KwyQZB4aHKFyNVtY_Mi-o';
 // Aseguramos que el chat_id sea un número, no un string
 const TELEGRAM_GROUP_CHAT_ID = Number(process.env.TELEGRAM_GROUP_CHAT_ID);
-const COSTO_QUemar = 10; // Créditos para publicar a un infiel
-const COSTO_VER_CHISME = 2; // Créditos para ver el chisme completo
+const COSTO_QUemar = 5; // Créditos para publicar a un infiel
+const COSTO_VER_CHISME = 1; // Créditos para ver el chisme completo
 // --- FIN DE LA CONFIGURACIÓN ---
 
 // --- BASE DE DATOS CON PERSISTENCIA EN ARCHIVO JSON ---
-const DB_FILE = '/var/data/database.json';
-// --- FUNCIÓN PARA SINCRONIZAR LA BASE DE DATOS ---
+const DB_FILE = path.join(__dirname, 'database.json');
+
 function syncDatabaseWithMaster() {
     const masterPath = path.join(__dirname, 'database-master.json');
     const serverPath = DB_FILE; // Esta variable ya existe en tu código
